@@ -12,13 +12,19 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 config/.env
+config/.env.*
 
 # Logs
-logs
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
@@ -30,20 +36,23 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
-# Bower dependency directory
+# Bower dependency directory (https://bower.io/)
 bower_components
 
 # node-waf configuration
 .lock-wscript
 
-# Compiled binary addons
+# Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
 # Dependency directories
 jspm_packages/
+
+# TypeScript v1 declaration files
+typings/
 
 # TypeScript cache
 *.tsbuildinfo
@@ -72,7 +81,7 @@ jspm_packages/
 # dotenv environment variables file
 .env.test
 
-# parcel-bundler cache
+# parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
 
@@ -111,11 +120,11 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# Uploads directory
+# Uploads
 uploads/
 public/uploads/
 
-# Database files
+# Database
 *.sqlite
 *.db
 
@@ -124,6 +133,145 @@ public/uploads/
 *.key
 *.crt
 
+# PM2
+.pm2/
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
 # Backup files
 *.bak
 *.backup 
+
+# Test files
+test-results/
+coverage/
+
+# Build artifacts
+build/
+dist/
+out/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Production specific
+.env.production
+.env.staging
+.env.render
+.env.railway
+.env.heroku
+
+# Monitoring and debugging
+*.dump
+*.core
+*.trace
+
+# Cloud deployment
+.render-buildlogs/
+.railway/
+.vercel/
+
+# Security
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Backup and temporary files
+*.tmp
+*.temp
+*.cache
+*.bak
+*.backup
+*.old
+*.orig
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# OS generated files (more comprehensive)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Node.js specific
+.node_repl_history
+.npm
+.eslintcache
+.cache
+.parcel-cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Testing
+test-results/
+coverage/
+.nyc_output
+*.lcov
+
+# Build and distribution
+build/
+dist/
+out/
+.next/
+.nuxt/
+public/
+
+# Database files
+*.sqlite
+*.db
+*.sql
+
+# PM2 and process management
+.pm2/
+ecosystem.config.js
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+
+# Uploads and media
+uploads/
+public/uploads/
+media/
+static/uploads/
+
+# Redis dump files
+dump.rdb
+*.rdb
+
+# MongoDB
+*.mongodb
+
+# SSL and certificates
+ssl/
+certificates/
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx 

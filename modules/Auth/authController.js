@@ -9,6 +9,7 @@ import { deleteFromCloudinary } from "../../utils/multer.js";
 import { generateTokens, storeRefreshToken, setCookies, tokenFunction } from "../../utils/tokenFunction.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { AppError } from "../../utils/AppError.js";
+import logger from "../../utils/logger.js";
 
 
 //==================================Signup======================================
@@ -191,7 +192,7 @@ export const logout = async (req, res, next) => {
 				const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 				await redis.del(`refresh_token:${decoded.userId}`);
 			} catch (error) {
-				console.log("Error deleting refresh token from Redis:", error.message);
+				logger.error("Error deleting refresh token from Redis:", error.message);
 			}
 		}
 
@@ -276,9 +277,9 @@ export const getProfile = async (req, res, next) => {
 
 export const uploadProfileImage = async (req, res, next) => {
 	try {
-		console.log("Upload profile image request received");
-		console.log("File:", req.file);
-		console.log("Uploaded file:", req.uploadedFile);
+		logger.info("Upload profile image request received");
+		logger.debug("File:", req.file);
+		logger.debug("Uploaded file:", req.uploadedFile);
 		
 		if (!req.file) {
 			return res.status(400).json({ 
@@ -296,27 +297,27 @@ export const uploadProfileImage = async (req, res, next) => {
 			});
 		}
 
-		console.log("User found:", user._id);
-		console.log("Current profile image:", user.profileImage);
+		logger.info("User found:", user._id);
+		logger.debug("Current profile image:", user.profileImage);
 
 		// Delete old profile image from Cloudinary if exists
 		if (user.profileImage) {
 			try {
 				await deleteFromCloudinary(user.profileImage);
-				console.log("Successfully deleted old profile image from Cloudinary");
+				logger.info("Successfully deleted old profile image from Cloudinary");
 			} catch (error) {
-				console.log("Error deleting old profile image:", error);
+				logger.error("Error deleting old profile image:", error);
 			}
 		}
 
 		// Update user with new profile image from Cloudinary
 		if (req.uploadedFile && req.uploadedFile.url) {
-			console.log("New profile image URL:", req.uploadedFile.url);
+			logger.info("New profile image URL:", req.uploadedFile.url);
 			user.profileImage = req.uploadedFile.url;
 			await user.save();
-			console.log("Profile image saved to database");
+			logger.info("Profile image saved to database");
 		} else {
-			console.error("No uploaded file data found");
+			logger.error("No uploaded file data found");
 			return res.status(500).json({
 				success: false,
 				message: "Failed to upload image to Cloudinary"
@@ -332,7 +333,7 @@ export const uploadProfileImage = async (req, res, next) => {
 			}
 		});
 	} catch (error) {
-		console.error("Error in uploadProfileImage:", error);
+		logger.error("Error in uploadProfileImage:", error);
 		errorHandler(error, req, res, next);
 	}
 };
@@ -415,7 +416,7 @@ export const forgotPassword = async (req, res, next) => {
 			user.resetPasswordTokenExpiresIn = tokenExpiration;
 			await user.save();
 		} catch (saveError) {
-			console.log("Failed to save reset password token to user, but email was sent:", saveError);
+			logger.error("Failed to save reset password token to user, but email was sent:", saveError);
 		}
 
 		res.status(200).json({

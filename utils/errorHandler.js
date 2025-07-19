@@ -1,6 +1,17 @@
+import logger from './logger.js';
+
 export const errorHandler = (err, req, res, next) => {
     let statusCode = err.statusCode || 500;
     let message = err.message || 'Internal Server Error';
+    
+    // Log error details
+    logger.error(`Error ${statusCode}: ${message}`, {
+        url: req.originalUrl,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        stack: err.stack
+    });
     
     // Handle MongoDB duplicate key errors
     if (err.code === 11000) {
@@ -27,11 +38,25 @@ export const errorHandler = (err, req, res, next) => {
         message = `Invalid ${err.path}: ${err.value}`;
     }
     
-    res.status(statusCode).json({
+    // Handle JWT errors
+    if (err.name === 'JsonWebTokenError') {
+        statusCode = 401;
+        message = 'Invalid token';
+    }
+    
+    if (err.name === 'TokenExpiredError') {
+        statusCode = 401;
+        message = 'Token expired';
+    }
+    
+    // Production error response
+    const errorResponse = {
         success: false,
         error: message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    };
+    
+    res.status(statusCode).json(errorResponse);
 };
 
 export const notFound = (req, res, next) => {

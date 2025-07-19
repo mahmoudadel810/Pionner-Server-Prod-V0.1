@@ -4,6 +4,7 @@ import { redis } from "../../utils/redis.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import { paginationHelper, buildSearchQuery, buildPaginationResponse } from "../../utils/pagination.js";
 import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "../../utils/multer.js";
+import logger from "../../utils/logger.js";
 
 //==================================Get All Products======================================
 
@@ -244,7 +245,7 @@ export const uploadProductImage = async (req, res, next) => {
 			try {
 				await deleteFromCloudinary(product.image);
 			} catch (error) {
-				console.log("Error deleting old image:", error);
+				logger.error("Error deleting old image:", error);
 			}
 		}
 
@@ -295,7 +296,7 @@ export const uploadProductImages = async (req, res, next) => {
 				try {
 					await deleteFromCloudinary(oldImage);
 				} catch (error) {
-					console.log("Error deleting old image:", error);
+					logger.error("Error deleting old image:", error);
 				}
 			}
 		}
@@ -347,9 +348,9 @@ export const deleteProduct = async (req, res, next) => {
 		if (imagesToDelete.length > 0) {
 			try {
 				await deleteMultipleFromCloudinary(imagesToDelete);
-				console.log("Successfully deleted all product images from Cloudinary");
+				logger.info("Successfully deleted all product images from Cloudinary");
 			} catch (error) {
-				console.log("Error deleting images from cloudinary:", error);
+				logger.error("Error deleting images from cloudinary:", error);
 			}
 		}
 
@@ -472,6 +473,6 @@ async function updateFeaturedProductsCache() {
 			await redis.set("featured_products", JSON.stringify(featuredProducts));
 		}
 	} catch (error) {
-		console.log("error in update cache function");
+			logger.error("error in update cache function", error);
 	}
 } 
