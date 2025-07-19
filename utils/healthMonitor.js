@@ -25,6 +25,15 @@ export const getHealthStatus = async (req) => {
          redis: 'unknown',
          cloudinary: 'unknown'
       },
+      debug: {
+         redis: {
+            hasUrl: false,
+            urlLength: 0,
+            connectionStatus: 'unknown',
+            error: null,
+            environment: process.env.NODE_ENV || 'development'
+         }
+      },
       endpoints: {
          auth: '/api/v1/auth',
          products: '/api/v1/products',
@@ -54,26 +63,59 @@ export const getHealthStatus = async (req) => {
       healthData.success = false;
    }
 
-   // Check Redis connectivity
+   // Enhanced Redis connectivity check with detailed debugging
    try {
-      const { redis } = await import('./redis.js');
-      if (redis && redis.status === 'ready') {
-         healthData.services.redis = 'connected';
-         // Test Redis with a ping
-         const pingResult = await redis.ping();
-         if (pingResult !== 'PONG') {
-            healthData.services.redis = 'ping_failed';
-            healthData.success = false;
-         }
-      } else if (redis && redis.status === 'connecting') {
-         healthData.services.redis = 'connecting';
-      } else {
-         healthData.services.redis = 'disconnected';
+      // Check if Redis URL exists
+      const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+      healthData.debug.redis.hasUrl = !!redisUrl;
+      healthData.debug.redis.urlLength = redisUrl ? redisUrl.length : 0;
+      
+      if (!redisUrl) {
+         healthData.services.redis = 'no_url_configured';
+         healthData.debug.redis.error = 'No Redis URL found in environment variables';
          healthData.success = false;
+      } else {
+         const { redis } = await import('./redis.js');
+         
+         if (!redis) {
+            healthData.services.redis = 'not_initialized';
+            healthData.debug.redis.error = 'Redis client not initialized';
+            healthData.success = false;
+         } else {
+            healthData.debug.redis.connectionStatus = redis.status;
+            
+            if (redis.status === 'ready') {
+               healthData.services.redis = 'connected';
+               // Test Redis with a ping
+               try {
+                  const pingResult = await redis.ping();
+                  if (pingResult !== 'PONG') {
+                     healthData.services.redis = 'ping_failed';
+                     healthData.debug.redis.error = `Ping returned: ${pingResult}`;
+                     healthData.success = false;
+                  }
+               } catch (pingError) {
+                  healthData.services.redis = 'ping_error';
+                  healthData.debug.redis.error = `Ping failed: ${pingError.message}`;
+                  healthData.success = false;
+               }
+            } else if (redis.status === 'connecting') {
+               healthData.services.redis = 'connecting';
+            } else if (redis.status === 'end') {
+               healthData.services.redis = 'ended';
+               healthData.debug.redis.error = 'Redis connection ended';
+               healthData.success = false;
+            } else {
+               healthData.services.redis = 'disconnected';
+               healthData.debug.redis.error = `Redis status: ${redis.status}`;
+               healthData.success = false;
+            }
+         }
       }
    } catch (error) {
       logger.error('Redis health check failed:', error.message);
       healthData.services.redis = 'error';
+      healthData.debug.redis.error = error.message;
       healthData.success = false;
    }
 
