@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import axios from "../lib/axios";
+import ApiService from "../lib/api";
+import axiosInstance from "../lib/axios";
 import { toast } from "react-hot-toast";
 
 export const useUserStore = create((set, get) => ({
@@ -35,7 +36,7 @@ export const useUserStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.post("/v1/auth/signup", {
+      const response = await ApiService.auth.signup({
         name,
         email,
         phone,
@@ -67,7 +68,7 @@ export const useUserStore = create((set, get) => ({
   login: async (email, password) => {
     set({ loading: true, justLoggedOut: false }); // Clear logout flag on login
     try {
-      const response = await axios.post("/v1/auth/login", { email, password });
+      const response = await ApiService.auth.login({ email, password });
       if (response.data && response.data.success) {
         // Store user data in localStorage for persistence
         localStorage.setItem('user', JSON.stringify(response.data));
@@ -99,7 +100,7 @@ export const useUserStore = create((set, get) => ({
   forgetPassword: async email => {
     set({ loading: true });
     try {
-      const response = await axios.post("/v1/auth/forgot-password", { email });
+      const response = await ApiService.auth.forgotPassword({ email });
       set({ loading: false });
 
       if (response.data && response.data.success) {
@@ -129,7 +130,7 @@ export const useUserStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.post("/v1/auth/reset-password", {
+      const response = await ApiService.auth.resetPassword({
         code,
         newPassword,
         confirmNewPassword,
@@ -159,7 +160,7 @@ export const useUserStore = create((set, get) => ({
       set({ user: null, checkingAuth: false, justLoggedOut: true });
       
       // Try to logout on server
-      await axios.post("/v1/auth/logout");
+      await ApiService.auth.logout();
       
       // Clear any stored tokens or auth data
       localStorage.removeItem('user');
@@ -218,7 +219,7 @@ export const useUserStore = create((set, get) => ({
     }, 5000); // 5 second timeout
     
     try {
-      const response = await axios.get("/v1/auth/profile");
+      const response = await ApiService.profile.get();
       clearTimeout(timeoutId);
       
       if (response.data && response.data.success && response.data.data) {
@@ -316,7 +317,7 @@ export const useUserStore = create((set, get) => ({
 
     set({ checkingAuth: true });
     try {
-      const response = await axios.post("/v1/auth/refresh-token");
+      const response = await ApiService.auth.refreshToken();
       set({ checkingAuth: false });
       return response.data;
     } catch (error) {
@@ -370,7 +371,7 @@ useUserStore.subscribe(
 // Axios interceptor for token refresh
 let refreshPromise = null;
 
-axios.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   response => response,
   async error => {
     const originalRequest = error.config;
@@ -386,14 +387,14 @@ axios.interceptors.response.use(
       try {
         if (refreshPromise) {
           await refreshPromise;
-          return axios(originalRequest);
+          return axiosInstance(originalRequest);
         }
 
         refreshPromise = useUserStore.getState().refreshToken();
         await refreshPromise;
         refreshPromise = null;
 
-        return axios(originalRequest);
+        return axiosInstance(originalRequest);
       } catch (refreshError) {
         // If refresh token fails, clear user state and don't retry
         refreshPromise = null;

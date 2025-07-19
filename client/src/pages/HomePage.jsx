@@ -5,6 +5,7 @@ import { useProductStore } from "../stores/useProductStore";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
+import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
 import FeaturedProducts from "../components/FeaturedProducts";
 import HeroSlider from "../components/HeroSlider";
@@ -131,10 +132,9 @@ const HomePage = () => {
   // Fetch featured products
   const fetchFeaturedProducts = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/products/getFeaturedProducts');
-      const data = await response.json();
-      if (data.success) {
-        setFeaturedProducts(data.data);
+      const response = await axios.get('/products/getFeaturedProducts');
+      if (response.data.success) {
+        setFeaturedProducts(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching featured products:', error);

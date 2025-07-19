@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "../lib/axios";
+import ApiService from "../lib/api";
 import { toast } from "react-hot-toast";
 
 export const useCartStore = create((set, get) => ({
@@ -17,7 +17,7 @@ export const useCartStore = create((set, get) => ({
 
   getMyCoupon: async () => {
     try {
-      const response = await axios.get("/v1/coupons/getCoupon");
+      const response = await ApiService.coupons.get();
       if (response.data) {
         set({ coupon: response.data });
         return { success: true, data: response.data };
@@ -32,7 +32,7 @@ export const useCartStore = create((set, get) => ({
 
   applyCoupon: async code => {
     try {
-      const response = await axios.post("/v1/coupons/validateCoupon", { code });
+      const response = await ApiService.coupons.validate(code);
       if (response.data) {
         set({ coupon: response.data, isCouponApplied: true });
         get().calculateTotals();
@@ -58,7 +58,7 @@ export const useCartStore = create((set, get) => ({
 
   getCartItems: async () => {
     try {
-      const response = await axios.get("/v1/cart/getCartProducts");
+      const response = await ApiService.cart.getItems();
       if (response.data && response.data.success) {
         const cartItems = response.data.data || [];
         set({ cart: cartItems });
@@ -88,7 +88,7 @@ export const useCartStore = create((set, get) => ({
 
   clearCart: async () => {
     try {
-      await axios.post("/v1/cart/removeFromCart", {});
+      await ApiService.cart.clear();
       set({ cart: [], coupon: null, total: 0, subtotal: 0 });
       toast.success("Cart cleared successfully");
       return { success: true };
@@ -107,9 +107,7 @@ export const useCartStore = create((set, get) => ({
       
       if (existingItem) {
         // Product is in cart, remove it
-        const response = await axios.post("/v1/cart/removeFromCart", {
-          productId: product._id,
-        });
+        const response = await ApiService.cart.removeItem(product._id);
 
         if (response.data && response.data.success) {
           set(prevState => ({
@@ -123,9 +121,7 @@ export const useCartStore = create((set, get) => ({
         }
       } else {
         // Product is not in cart, add it
-        const response = await axios.post("/v1/cart/addToCart", {
-          productId: product._id,
-        });
+        const response = await ApiService.cart.addItem({ productId: product._id });
 
         if (response.data && response.data.success) {
           set(prevState => ({
@@ -159,9 +155,7 @@ export const useCartStore = create((set, get) => ({
   // Keep the original addToCart for backward compatibility
   addToCart: async product => {
     try {
-      const response = await axios.post("/v1/cart/addToCart", {
-        productId: product._id,
-      });
+      const response = await ApiService.cart.addItem({ productId: product._id });
 
       if (response.data && response.data.success) {
         // Update cart state based on server response

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "../lib/axios";
+import ApiService from "../lib/api";
 import { toast } from "react-hot-toast";
 
 export const useWishlistStore = create((set, get) => ({
@@ -11,7 +11,7 @@ export const useWishlistStore = create((set, get) => ({
   fetchWishlist: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.get("/v1/wishlist");
+      const response = await ApiService.wishlist.getItems();
       if (response.data && response.data.success) {
         set({ wishlist: response.data.data, loading: false });
         return { success: true, data: response.data.data };
@@ -30,9 +30,7 @@ export const useWishlistStore = create((set, get) => ({
   addToWishlist: async (product) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.post("/v1/wishlist/add", {
-        productId: product._id,
-      });
+      const response = await ApiService.wishlist.addItem({ productId: product._id });
 
       if (response.data && response.data.success) {
         set(prevState => ({
@@ -56,7 +54,7 @@ export const useWishlistStore = create((set, get) => ({
   removeFromWishlist: async (productId) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.delete(`/v1/wishlist/remove/${productId}`);
+      const response = await ApiService.wishlist.removeItem(productId);
       
       if (response.data && response.data.success) {
         set(prevState => ({
@@ -80,7 +78,7 @@ export const useWishlistStore = create((set, get) => ({
   clearWishlist: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.delete("/v1/wishlist/clear");
+      const response = await ApiService.wishlist.clear();
       
       if (response.data && response.data.success) {
         set({ wishlist: [], loading: false });
