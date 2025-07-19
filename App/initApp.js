@@ -12,6 +12,7 @@ import { initCloudinary } from "../service/cloudinary.js";
 import * as AllRoutes from "../modules/indexRoutes.js";
 import logger from "../utils/logger.js";
 import { apiLimiter, authLimiter, paymentLimiter } from "../middlewares/rateLimit.js";
+import { getHealthStatus } from "../utils/healthMonitor.js";
 
 export const initApp = () => {
    // Load environment variables
@@ -68,6 +69,7 @@ export const initApp = () => {
 
    // Request logging middleware
    app.use((req, res, next) => {
+      req.startTime = Date.now();
       logger.http(`${req.method} ${req.originalUrl} - ${req.ip}`);
       next();
    });
@@ -84,25 +86,28 @@ export const initApp = () => {
    app.use(`/api/v1/contact`, AllRoutes.contactUsRoutes);
    app.use(`/api/v1/wishlist`, AllRoutes.wishlistRoutes);
 
-   // Health check endpoint
-   app.get('/', (req, res) => {
-      res.status(200).json({
-         success: true,
-         message: 'TheShop API is running!',
-         environment: process.env.NODE_ENV || 'development',
-         timestamp: new Date().toISOString()
-      });
-   });
-
-   // Health check endpoint for monitoring
-   app.get('/api/v1/health', (req, res) => {
-      res.status(200).json({
-         success: true,
-         message: 'Server is running and healthy!',
-         timestamp: new Date().toISOString(),
-         environment: process.env.NODE_ENV || 'development',
-         uptime: process.uptime()
-      });
+   // Comprehensive health check endpoint - all health data in one place
+   app.get('/health', async (req, res) => {
+      try {
+         const healthData = await getHealthStatus(req);
+         
+         // Set appropriate status code based on health
+         if (!healthData.success) {
+            res.status(503);
+         } else {
+            res.status(200);
+         }
+         
+         res.json(healthData);
+      } catch (error) {
+         logger.error('Health check failed:', error.message);
+         res.status(500).json({
+            success: false,
+            message: 'Health check failed',
+            timestamp: new Date().toISOString(),
+            error: error.message
+         });
+      }
    });
 
    // Error Handling 
