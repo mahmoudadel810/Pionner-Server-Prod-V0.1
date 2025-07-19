@@ -13,7 +13,6 @@ import * as AllRoutes from "../modules/indexRoutes.js";
 import logger from "../utils/logger.js";
 import { apiLimiter, authLimiter, paymentLimiter } from "../middlewares/rateLimit.js";
 import { getHealthStatus } from "../utils/healthMonitor.js";
-import { checkRequiredEnvVars } from "../utils/envCheck.js";
 
 export const initApp = () => {
    // Load environment variables
@@ -25,14 +24,19 @@ export const initApp = () => {
 
    const isProduction = process.env.NODE_ENV === 'production';
    
-   // Check required environment variables in production
-   if (isProduction) {
-      checkRequiredEnvVars();
+   // Initialize services
+   try {
+      initCloudinary();
+   } catch (error) {
+      logger.warn('Cloudinary initialization failed:', error.message);
    }
    
-   // Initialize services
-   initCloudinary();
-   connectDB();
+   try {
+      connectDB();
+   } catch (error) {
+      logger.error('Database connection failed:', error.message);
+      throw error; // Database is critical, so we throw
+   }
 
    // Create Express app
    const app = express();
@@ -58,7 +62,7 @@ export const initApp = () => {
    // CORS configuration
    const corsOptions = {
       origin: isProduction 
-         ? [process.env.CLIENT_URL].filter(Boolean)
+         ? [process.env.CLIENT_URL || 'https://your-frontend-domain.com'].filter(Boolean)
          : ["http://localhost:5173", "http://localhost:3000"],
       credentials: true,
       optionsSuccessStatus: 200
