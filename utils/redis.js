@@ -17,12 +17,17 @@ try {
       redis = new Redis(redisUrl, {
          retryDelayOnFailover: 100,
          maxRetriesPerRequest: 3,
-         lazyConnect: true,
+         lazyConnect: false, // Connect immediately
          tls: {
             rejectUnauthorized: false
          },
-         connectTimeout: 10000,
-         commandTimeout: 5000
+         connectTimeout: 15000, // 15 seconds
+         commandTimeout: 10000, // 10 seconds
+         retryDelayOnClusterDown: 300,
+         retryDelayOnFailover: 100,
+         maxRetriesPerRequest: 3,
+         enableReadyCheck: true,
+         maxLoadingTimeout: 10000
       });
    } else {
       // Fallback to individual config (for local development)
@@ -33,9 +38,9 @@ try {
          password: process.env.REDIS_PASSWORD,
          retryDelayOnFailover: 100,
          maxRetriesPerRequest: 3,
-         lazyConnect: true,
-         connectTimeout: 10000,
-         commandTimeout: 5000
+         lazyConnect: false, // Connect immediately
+         connectTimeout: 15000,
+         commandTimeout: 10000
       });
    }
 

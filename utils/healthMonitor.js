@@ -99,8 +99,9 @@ export const getHealthStatus = async (req) => {
                   healthData.debug.redis.error = `Ping failed: ${pingError.message}`;
                   healthData.success = false;
                }
-            } else if (redis.status === 'connecting') {
+            } else if (redis.status === 'connecting' || redis.status === 'wait') {
                healthData.services.redis = 'connecting';
+               healthData.debug.redis.error = `Redis is ${redis.status} - connection in progress`;
             } else if (redis.status === 'end') {
                healthData.services.redis = 'ended';
                healthData.debug.redis.error = 'Redis connection ended';
