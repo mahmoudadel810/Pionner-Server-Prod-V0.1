@@ -86,6 +86,25 @@ export const initApp = () => {
    app.use(`/api/v1/contact`, AllRoutes.contactUsRoutes);
    app.use(`/api/v1/wishlist`, AllRoutes.wishlistRoutes);
 
+   // Root endpoint for API information
+   app.get('/', (req, res) => {
+      res.status(200).json({
+         success: true,
+         message: 'TheShop API is running!',
+         version: process.env.npm_package_version || '1.0.0',
+         environment: process.env.NODE_ENV || 'development',
+         timestamp: new Date().toISOString(),
+         endpoints: {
+            health: '/health',
+            auth: '/api/v1/auth',
+            products: '/api/v1/products',
+            categories: '/api/v1/categories',
+            orders: '/api/v1/orders',
+            payments: '/api/v1/payments'
+         }
+      });
+   });
+
    // Comprehensive health check endpoint - all health data in one place
    app.get('/health', async (req, res) => {
       try {
