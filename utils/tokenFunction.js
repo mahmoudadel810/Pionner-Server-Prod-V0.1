@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { redis } from "./redis.js";
+import logger from "./logger.js";
 
 
 //generate tokens for access token and refresh token
@@ -31,17 +32,21 @@ export const storeRefreshToken = async (userId, refreshToken) => {
 
 //set cookies for access token and refresh token
 export const setCookies = (res, accessToken, refreshToken) => {
+    const isProduction = process.env.NODE_ENV === "production";
+    
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isProduction,
+        sameSite: isProduction ? "strict" : "lax",
         maxAge: 15 * 60 * 1000, // 15 minutes
+        path: "/",
     });
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isProduction,
+        sameSite: isProduction ? "strict" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
     });
 };
 

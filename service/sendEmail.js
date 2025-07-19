@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import logger from "../utils/logger.js";
 
 const sendEmail = async ({
     to = '',
@@ -31,7 +32,7 @@ const sendEmail = async ({
 
         return !info.rejected.length;
     } catch (error) {
-        console.error('Email sending error:', error.message);
+        logger.error('Email sending error:', error.message);
         throw error;
     }
 };

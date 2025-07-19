@@ -2,38 +2,54 @@ import rateLimit from "express-rate-limit";
 
 //==================================Rate Limiting Middleware======================================
 
+// Custom key generator that handles proxy scenarios
+const keyGenerator = (req) => {
+   // Use X-Forwarded-For header if available (when behind proxy)
+   const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+   return clientIP;
+};
+
 // General API rate limiter
 export const apiLimiter = rateLimit({
-   windowMs: 15 * 60 * 1000, 
-   max: 100, 
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 800, // limit each IP to 800 requests per windowMs
+   keyGenerator,
    message: {
       success: false,
       message: "Too many requests from this IP, please try again later."
    },
    standardHeaders: true,
    legacyHeaders: false,
+   skipSuccessfulRequests: false,
+   skipFailedRequests: false,
 });
 
 // Auth routes rate limiter (more strict)
 export const authLimiter = rateLimit({
-   windowMs: 15 * 60 * 1000, 
-   max: 5, 
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 5, // limit each IP to 5 auth attempts per windowMs
+   keyGenerator,
    message: {
       success: false,
       message: "Too many authentication attempts, please try again later."
    },
    standardHeaders: true,
    legacyHeaders: false,
+   skipSuccessfulRequests: true, // Don't count successful logins
+   skipFailedRequests: false,
 });
 
 // Payment routes rate limiter (very strict)
 export const paymentLimiter = rateLimit({
-   windowMs: 15 * 60 * 1000, 
-   max: 3, 
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 3, // limit each IP to 3 payment attempts per windowMs
+   keyGenerator,
    message: {
       success: false,
       message: "Too many payment attempts, please try again later."
    },
    standardHeaders: true,
    legacyHeaders: false,
+   skipSuccessfulRequests: true, // Don't count successful payments
+   skipFailedRequests: false,
 }); 

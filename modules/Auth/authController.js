@@ -175,8 +175,14 @@ export const login = asyncHandler(async (req, res, next) => {
 		message: "Login successful",
 		data: {
 			user: {
-				...user.toObject(),
-				status: "active" // Return updated status
+				_id: user._id,
+				name: user.name,
+				email: user.email,
+				phone: user.phone,
+				profileImage: user.profileImage,
+				isConfirmed: user.isConfirmed,
+				status: "active",
+				role: user.role
 			}
 		}
 	});

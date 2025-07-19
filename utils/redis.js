@@ -32,16 +32,16 @@ try {
    } else {
       // Fallback to individual config (for local development)
       logger.info('Attempting to connect to Redis using individual config');
-      redis = new Redis({
-         host: process.env.REDIS_HOST || 'localhost',
-         port: process.env.REDIS_PORT || 6379,
-         password: process.env.REDIS_PASSWORD,
-         retryDelayOnFailover: 100,
-         maxRetriesPerRequest: 3,
+   redis = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: process.env.REDIS_PORT || 6379,
+      password: process.env.REDIS_PASSWORD,
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
          lazyConnect: false, // Connect immediately
          connectTimeout: 15000,
          commandTimeout: 10000
-      });
+   });
    }
 
    redis.on('connect', () => {

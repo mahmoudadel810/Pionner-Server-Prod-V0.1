@@ -13,6 +13,7 @@ import * as AllRoutes from "../modules/indexRoutes.js";
 import logger from "../utils/logger.js";
 import { apiLimiter, authLimiter, paymentLimiter } from "../middlewares/rateLimit.js";
 import { getHealthStatus } from "../utils/healthMonitor.js";
+import { checkRequiredEnvVars } from "../utils/envCheck.js";
 
 export const initApp = () => {
    // Load environment variables
@@ -24,6 +25,11 @@ export const initApp = () => {
 
    const isProduction = process.env.NODE_ENV === 'production';
    
+   // Check required environment variables in production
+   if (isProduction) {
+      checkRequiredEnvVars();
+   }
+   
    // Initialize services
    initCloudinary();
    connectDB();
@@ -31,6 +37,11 @@ export const initApp = () => {
    // Create Express app
    const app = express();
    const PORT = process.env.PORT || 3000;
+
+   // Trust proxy configuration for production (needed for rate limiting behind load balancers)
+   if (isProduction) {
+      app.set('trust proxy', 1);
+   }
 
    // Security middleware
    app.use(helmet({
@@ -59,6 +70,17 @@ export const initApp = () => {
    app.use(express.urlencoded({ extended: true, limit: "10mb" }));
    app.use(cookieParser());
 
+   // Additional security headers for production
+   if (isProduction) {
+      app.use((req, res, next) => {
+         res.setHeader('X-Content-Type-Options', 'nosniff');
+         res.setHeader('X-Frame-Options', 'DENY');
+         res.setHeader('X-XSS-Protection', '1; mode=block');
+         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+         next();
+      });
+   }
+
    // Compression middleware
    app.use(compression({ level: 6 }));
 
@@ -70,7 +92,8 @@ export const initApp = () => {
    // Request logging middleware
    app.use((req, res, next) => {
       req.startTime = Date.now();
-      logger.http(`${req.method} ${req.originalUrl} - ${req.ip}`);
+      const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+      logger.http(`${req.method} ${req.originalUrl} - ${clientIP}`);
       next();
    });
 
@@ -123,9 +146,9 @@ export const initApp = () => {
          res.status(500).json({
             success: false,
             message: 'Health check failed',
-            timestamp: new Date().toISOString(),
+         timestamp: new Date().toISOString(),
             error: error.message
-         });
+      });
       }
    });
 
