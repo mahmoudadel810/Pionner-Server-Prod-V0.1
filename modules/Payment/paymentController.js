@@ -4,6 +4,7 @@ import productModel from "../../DB/models/productModel.js";
 import { stripe } from "../../utils/stripe.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import { createOrderSafely, waitForOrder } from "../../utils/paymentHelpers.js";
+import logger from "../../utils/logger.js";
 
 //==================================Create Checkout Session======================================
 
@@ -135,7 +136,7 @@ export const checkoutSuccess = async (req, res, next) => {
 			}
 
 			// If webhook hasn't processed yet, create order as fallback
-			console.log('Webhook may have failed, creating order as fallback for session:', sessionId);
+			logger.warn('Webhook may have failed, creating order as fallback for session:', sessionId);
 			
 			try {
 				const result = await createOrderSafely(session, { addressType: 'fallback' });
@@ -149,7 +150,7 @@ export const checkoutSuccess = async (req, res, next) => {
 					}
 				});
 			} catch (fallbackError) {
-				console.error('Fallback order creation failed:', fallbackError);
+				logger.error('Fallback order creation failed:', fallbackError);
 				return res.status(500).json({
 					success: false,
 					message: "Payment successful but order creation failed. Please contact support.",
@@ -182,7 +183,7 @@ export const handleStripeWebhook = async (req, res, next) => {
 		try {
 			event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
 		} catch (err) {
-			console.error('Webhook signature verification failed:', err.message);
+			logger.error('Webhook signature verification failed:', err.message);
 			return res.status(400).send(`Webhook Error: ${err.message}`);
 		}
 
@@ -194,14 +195,14 @@ export const handleStripeWebhook = async (req, res, next) => {
 				break;
 			case 'payment_intent.succeeded':
 				const paymentIntent = event.data.object;
-				console.log('Payment succeeded:', paymentIntent.id);
+				logger.info('Payment succeeded:', paymentIntent.id);
 				break;
 			case 'payment_intent.payment_failed':
 				const failedPayment = event.data.object;
-				console.log('Payment failed:', failedPayment.id);
+				logger.warn('Payment failed:', failedPayment.id);
 				break;
 			default:
-				console.log(`Unhandled event type: ${event.type}`);
+				logger.info(`Unhandled event type: ${event.type}`);
 		}
 
 		res.json({ received: true });
@@ -242,16 +243,16 @@ async function handleCheckoutSessionCompleted(session) {
 			const result = await createOrderSafely(session, { addressType: 'webhook' });
 			
 			if (result.created) {
-				console.log('Order created from webhook:', result.order._id);
+				logger.info('Order created from webhook:', result.order._id);
 			} else {
-				console.log('Order already exists for session:', session.id);
+				logger.info('Order already exists for session:', session.id);
 			}
 		}
 	} catch (error) {
-		console.error('Error handling checkout session completed:', error);
+		logger.error('Error handling checkout session completed:', error);
 		// Log more details for debugging
 		if (error.code === 11000) {
-			console.error('Duplicate key error - order already exists for session:', session.id);
+			logger.error('Duplicate key error - order already exists for session:', session.id);
 		}
 	}
 }

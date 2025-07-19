@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import userModel from "../DB/models/userModel.js";
+import logger from "../utils/logger.js";
 
 //==================================Authentication Middleware======================================
 
@@ -37,7 +38,7 @@ export const protect= async (req, res, next) => {
 			throw error;
 		}
 	} catch (error) {
-		console.log("Error in protect middleware", error.message);
+		logger.error("Error in protect middleware", error.message);
 		return res.status(401).json({ 
 			success: false,
 			message: "Unauthorized - Invalid access token" 

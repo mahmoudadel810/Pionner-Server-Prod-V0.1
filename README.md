@@ -1,329 +1,210 @@
-# TheShop E-commerce Backend API
+# TheShop Backend API - Production Ready
 
-A robust Node.js/Express.js backend API for a comprehensive e-commerce platform with authentication, product management, order processing, payment integration, and analytics.
+A robust, scalable Node.js + Express backend API for e-commerce applications, optimized for production deployment on Render.
 
-## Table of Contents
+## 🚀 Production Features
 
-- [Overview](#overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Installation & Setup](#installation--setup)
-- [Environment Configuration](#environment-configuration)
-- [API Documentation](#api-documentation)
-- [Usage](#usage)
-- [Development](#development)
-- [Deployment](#deployment)
+- **Security Hardened**: Helmet, CORS, rate limiting, input validation
+- **Performance Optimized**: Compression, caching, efficient database queries
+- **Production Logging**: Winston logger with structured logging
+- **Error Handling**: Comprehensive error handling with no sensitive data leakage
+- **Database Optimization**: Connection pooling, proper indexing
+- **File Upload**: Secure Cloudinary integration
+- **Payment Processing**: Stripe integration with webhook handling
+- **Email Services**: Nodemailer integration
+- **Caching**: Redis integration for improved performance
 
-## Overview
+## 🛠️ Tech Stack
 
-TheShop Backend API provides a complete e-commerce solution with secure authentication, product catalog management, shopping cart functionality, order processing, payment integration with Stripe, coupon system, contact management, and comprehensive analytics.
-
-## Features
-
-- **Authentication & Authorization**: JWT-based authentication with email confirmation
-- **Product Management**: CRUD operations for products with image upload via Cloudinary
-- **Shopping Cart**: Session-based cart management with Redis
-- **Order Processing**: Complete order lifecycle management
-- **Payment Integration**: Stripe payment processing
-- **Coupon System**: Discount and promotional code management
-- **Contact Management**: Customer support and inquiry handling
-- **Analytics**: Sales and performance metrics
-- **Security**: Rate limiting, input validation, and security headers
-- **Performance**: Compression, caching, and optimization
-
-## Technology Stack
-
-- **Runtime**: Node.js with ES6 modules
+- **Runtime**: Node.js 18+
 - **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT (JSON Web Tokens)
-- **File Upload**: Multer with Cloudinary
-- **Payment**: Stripe API
+- **Database**: MongoDB with Mongoose
+- **Caching**: Redis (optional)
+- **File Storage**: Cloudinary
+- **Payment**: Stripe
 - **Email**: Nodemailer
-- **Caching**: Redis with ioredis
-- **Security**: Helmet, CORS, bcryptjs
-- **Validation**: Joi
-- **Rate Limiting**: express-rate-limit
-- **Development**: Nodemon
+- **Authentication**: JWT with refresh tokens
+- **Logging**: Winston
+- **Security**: Helmet, CORS, Rate Limiting
 
-## Project Structure
+## 📋 Prerequisites
 
-```
-Server/
-├── App/
-│   └── initApp.js              # Application initialization
-├── config/                     # Configuration files
-├── DB/
-│   ├── connection.js           # Database connection
-│   └── models/                 # MongoDB models
-│       ├── userModel.js
-│       ├── productModel.js
-│       ├── orderModel.js
-│       ├── couponModel.js
-│       └── contactUs.js
-├── middlewares/
-│   ├── auth.js                 # Authentication middleware
-│   ├── validation.js           # Input validation
-│   └── rateLimit.js            # Rate limiting
-├── modules/                    # Feature modules
-│   ├── Auth/                   # Authentication routes & controllers
-│   ├── Product/                # Product management
-│   ├── Cart/                   # Shopping cart
-│   ├── Order/                  # Order processing
-│   ├── Payment/                # Payment integration
-│   ├── Coupon/                 # Coupon system
-│   ├── Analytics/              # Analytics & reporting
-│   ├── ContactUs/              # Contact management
-│   └── indexRoutes.js          # Route aggregation
-├── service/
-│   ├── cloudinary.js           # Cloudinary configuration
-│   └── sendEmail.js            # Email service
-├── utils/
-│   ├── errorHandler.js         # Global error handling
-│   ├── multer.js               # File upload configuration
-│   ├── pagination.js           # Pagination utilities
-│   ├── redis.js                # Redis configuration
-│   ├── stripe.js               # Stripe configuration
-│   └── tokenFunction.js        # JWT utilities
-├── Docs/                       # API documentation
-└── index.js                    # Application entry point
-```
+- Node.js 18+ 
+- MongoDB database
+- Redis (optional, for caching)
+- Cloudinary account
+- Stripe account
+- Email service (Gmail, SendGrid, etc.)
 
-## Installation & Setup
-
-### Prerequisites
-
-- Node.js (v16 or higher)
-- MongoDB
-- Redis
-- npm or yarn
-
-### Installation Steps
+## 🔧 Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd Server
+   cd theshop-backend
    ```
 
 2. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
-3. **Set up environment variables**
+3. **Environment Configuration**
    ```bash
-   cp config/.env.example config/.env
+   cp config/production.env.example config/.env
+   # Edit config/.env with your production values
    ```
 
-4. **Configure environment variables** (see Environment Configuration section)
-
-5. **Start the development server**
+4. **Start the server**
    ```bash
-   npm run dev
+   # Development
+   pnpm dev
+   
+   # Production
+   pnpm start
    ```
 
-## Environment Configuration
+## 🌐 Deployment on Render
 
-Create a `.env` file in the `config/` directory with the following variables:
+### 1. Connect Your Repository
+- Connect your GitHub repository to Render
+- Select "Web Service" as the service type
+
+### 2. Configure Environment Variables
+Add these environment variables in Render dashboard:
 
 ```env
-# Server Configuration
-PORT=8000
-NODE_ENV=development
-
-# Database
-MONGODB_URI=mongodb://localhost:27017/theshop
-
-# JWT Configuration
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRE=15m
-JWT_REFRESH_EXPIRE=7d
-
-# Redis Configuration
-REDIS_URL=redis://localhost:6379
-
-# Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Stripe Configuration
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_webhook_secret
-
-# Email Configuration
+NODE_ENV=production
+PORT=3000
+MONGO_URI=your-mongodb-connection-string
+ACCESS_TOKEN_SECRET=your-jwt-secret
+REFRESH_TOKEN_SECRET=your-refresh-token-secret
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+STRIPE_SECRET_KEY=your-stripe-secret
+STRIPE_WEBHOOK_SECRET=your-webhook-secret
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_email_password
-
-# Client URL
-CLIENT_URL=http://localhost:3000
+EMAIL_USER=your-email
+EMAIL_PASS=your-app-password
+CLIENT_URL=https://your-frontend-domain.com
 ```
 
-## API Documentation
+### 3. Build Configuration
+- **Build Command**: `pnpm build`
+- **Start Command**: `pnpm start`
+- **Node Version**: 18.x
 
-The API is organized into the following modules, each with comprehensive documentation:
+### 4. Auto-Deploy
+- Enable auto-deploy from your main branch
+- Render will automatically deploy on every push
+
+## 📚 API Documentation
 
 ### Base URL
 ```
-Development: http://localhost:8000/api/v1
-Production: https://your-domain.com/api/v1
+https://your-app-name.onrender.com/api/v1
 ```
 
-### Available Modules
+### Authentication Endpoints
+- `POST /auth/signup` - User registration
+- `POST /auth/login` - User login
+- `POST /auth/logout` - User logout
+- `GET /auth/profile` - Get user profile
+- `PUT /auth/profile` - Update user profile
 
-1. **Authentication** (`/auth`)
-   - User registration and login
-   - Email confirmation
-   - Password reset
-   - Profile management
+### Product Endpoints
+- `GET /products` - Get all products (with pagination)
+- `GET /products/:id` - Get single product
+- `POST /products` - Create product (admin only)
+- `PUT /products/:id` - Update product (admin only)
+- `DELETE /products/:id` - Delete product (admin only)
 
-2. **Products** (`/products`)
-   - Product CRUD operations
-   - Image upload and management
-   - Product search and filtering
-   - Category management
+### Category Endpoints
+- `GET /categories` - Get all categories
+- `GET /categories/:id` - Get single category
+- `POST /categories` - Create category (admin only)
+- `PUT /categories/:id` - Update category (admin only)
+- `DELETE /categories/:id` - Delete category (admin only)
 
-3. **Cart** (`/cart`)
-   - Add/remove items
-   - Update quantities
-   - Cart retrieval and management
+### Order Endpoints
+- `GET /orders` - Get user orders
+- `POST /orders` - Create order
+- `GET /orders/:id` - Get single order
+- `PUT /orders/:id` - Update order status (admin only)
 
-4. **Orders** (`/orders`)
-   - Order creation and management
-   - Order status tracking
-   - Order history
+### Payment Endpoints
+- `POST /payments/create-checkout-session` - Create Stripe checkout session
+- `POST /payments/webhook` - Stripe webhook handler
+- `GET /payments/status/:sessionId` - Get payment status
 
-5. **Payments** (`/payments`)
-   - Stripe payment processing
-   - Payment confirmation
-   - Refund handling
+## 🔒 Security Features
 
-6. **Coupons** (`/coupons`)
-   - Coupon creation and validation
-   - Discount application
-   - Coupon management
+- **Rate Limiting**: Prevents abuse with configurable limits
+- **Input Validation**: All inputs validated and sanitized
+- **CORS Protection**: Configured for production domains
+- **Helmet Security**: HTTP headers security
+- **JWT Authentication**: Secure token-based authentication
+- **Password Hashing**: bcrypt for password security
+- **Error Handling**: No sensitive data in error responses
 
-7. **Analytics** (`/analytics`)
-   - Sales reports
-   - Performance metrics
-   - Data visualization
+## 📊 Monitoring & Logging
 
-8. **Contact** (`/contact`)
-   - Customer inquiries
-   - Support ticket management
-   - Contact form processing
+- **Structured Logging**: Winston logger with different levels
+- **Error Tracking**: Comprehensive error logging
+- **Performance Monitoring**: Request/response logging
+- **Health Checks**: `/api/v1/health` endpoint for monitoring
 
-For detailed API documentation, see the individual documentation files in the `Docs/` folder:
-- `AUTH_API_DOCUMENTATION.md`
-- `PRODUCT_API_DOCUMENTATION.md`
-- `ORDER_API_DOCUMENTATION.md`
-- `PAYMENT_API_DOCUMENTATION.md`
-- `COUPON_API_DOCUMENTATION.md`
-- `ANALYTICS_API_DOCUMENTATION.md`
-- `CONTACT_API_DOCUMENTATION.md`
+## 🚨 Error Handling
 
-## Usage
+The API returns consistent error responses:
 
-### Health Check
-
-```bash
-GET /api/v1/health
-```
-
-Response:
 ```json
 {
-  "success": true,
-  "message": "Server is running and healthy!",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "port": 8000,
-  "availableRoutes": ["/api/v1/auth", "/api/v1/products", ...]
+  "success": false,
+  "error": "Error message",
+  "stack": "Stack trace (development only)"
 }
 ```
 
-### Authentication Example
+## 🔧 Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NODE_ENV` | Environment (production/development) | Yes |
+| `PORT` | Server port | Yes |
+| `MONGO_URI` | MongoDB connection string | Yes |
+| `ACCESS_TOKEN_SECRET` | JWT access token secret | Yes |
+| `REFRESH_TOKEN_SECRET` | JWT refresh token secret | Yes |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
+| `STRIPE_SECRET_KEY` | Stripe secret key | Yes |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret | Yes |
+| `EMAIL_HOST` | SMTP host | Yes |
+| `EMAIL_USER` | Email username | Yes |
+| `EMAIL_PASS` | Email password | Yes |
+| `CLIENT_URL` | Frontend URL | Yes |
+| `REDIS_HOST` | Redis host (optional) | No |
+| `REDIS_PORT` | Redis port (optional) | No |
+| `REDIS_PASSWORD` | Redis password (optional) | No |
+
+## 🧪 Testing
 
 ```bash
-# Register a new user
-POST /api/v1/auth/signup
-Content-Type: application/json
+# Run tests (if configured)
+pnpm test
 
-{
-  "name": "John Doe",
-  "email": "john.doe@example.com",
-  "phone": "+1234567890",
-  "password": "SecurePass123!",
-  "confirmPassword": "SecurePass123!"
-}
-
-# Login
-POST /api/v1/auth/login
-Content-Type: application/json
-
-{
-  "email": "john.doe@example.com",
-  "password": "SecurePass123!"
-}
+# Run tests in watch mode
+pnpm test:watch
 ```
 
-## Development
+## 📝 License
 
-### Available Scripts
+This project is licensed under the ISC License.
 
-- `npm start`: Start production server
-- `npm run dev`: Start development server with nodemon
-- `npm run build`: Install dependencies for production
-
-### Development Guidelines
-
-1. **Code Style**: Follow existing patterns and naming conventions
-2. **Validation**: Use Joi schemas for input validation
-3. **Error Handling**: Use centralized error handling
-4. **Security**: Implement proper authentication and authorization
-5. **Testing**: Add tests for new features
-
-### Database Models
-
-The application uses MongoDB with Mongoose ODM. Key models include:
-- User: Authentication and profile data
-- Product: Product catalog and inventory
-- Order: Order processing and tracking
-- Coupon: Discount and promotional codes
-- ContactUs: Customer inquiries and support
-
-## Deployment
-
-### Production Setup
-
-1. **Environment Configuration**
-   - Set `NODE_ENV=production`
-   - Configure production database URLs
-   - Set up production API keys
-
-2. **Security Considerations**
-   - Use strong JWT secrets
-   - Configure CORS properly
-   - Enable rate limiting
-   - Set up SSL/TLS
-
-3. **Performance Optimization**
-   - Enable compression
-   - Configure Redis caching
-   - Set up CDN for static assets
-   - Monitor application performance
-
-### Deployment Options
-
-- **Heroku**: Use Procfile and environment variables
-- **AWS**: Deploy to EC2 or use Elastic Beanstalk
-- **Docker**: Containerize the application
-- **VPS**: Traditional server deployment
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -331,10 +212,12 @@ The application uses MongoDB with Mongoose ODM. Key models include:
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+## 📞 Support
 
-This project is licensed under the ISC License.
+For support and questions:
+- Create an issue in the repository
+- Contact the development team
 
-## Support
+---
 
-For support and questions, please refer to the API documentation in the `Docs/` folder or contact the development team.
+**Production Ready** ✅ | **Security Hardened** ✅ | **Performance Optimized** ✅

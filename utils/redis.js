@@ -1,26 +1,36 @@
-import Redis from "ioredis";
-import dotenv from "dotenv";
+import Redis from 'ioredis';
+import logger from './logger.js';
 
-dotenv.config();
+let redis = null;
 
-let redis;
-
-if (process.env.UPSTASH_REDIS_URL) {
-   redis = new Redis(process.env.UPSTASH_REDIS_URL, {
+try {
+   redis = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: process.env.REDIS_PORT || 6379,
+      password: process.env.REDIS_PASSWORD,
       retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
-      lazyConnect: true
-   });
-
-   redis.on('error', (error) => {
-      console.error('Redis connection error:', error.message);
+      lazyConnect: true,
    });
 
    redis.on('connect', () => {
-      console.log('Connected to Redis successfully');
+      logger.info('Connected to Redis successfully');
    });
-} else {
-   // console.warn('Redis environment variable not found - Caching features will be disabled');
+
+   redis.on('error', (err) => {
+      logger.error('Redis connection error:', err);
+   });
+
+   redis.on('close', () => {
+      logger.warn('Redis connection closed');
+   });
+
+   redis.on('reconnecting', () => {
+      logger.info('Redis reconnecting...');
+   });
+
+} catch (error) {
+   logger.error('Failed to initialize Redis:', error.message);
    redis = null;
 }
 

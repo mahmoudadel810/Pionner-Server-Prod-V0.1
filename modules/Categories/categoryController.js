@@ -4,6 +4,7 @@ import { redis } from "../../utils/redis.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import { paginationHelper, buildSearchQuery, buildPaginationResponse } from "../../utils/pagination.js";
 import { deleteFromCloudinary } from "../../utils/multer.js";
+import logger from "../../utils/logger.js";
 
 //==================================Create Category======================================
 
@@ -256,9 +257,9 @@ export const updateCategory = async (req, res, next) => {
 			if (category.image) {
 				try {
 					await deleteFromCloudinary(category.image);
-				} catch (error) {
-					console.log("Error deleting old image:", error);
-				}
+						} catch (error) {
+			logger.error("Error deleting old image:", error);
+		}
 			}
 			category.image = req.file.path;
 		}
@@ -315,9 +316,9 @@ export const deleteCategory = async (req, res, next) => {
 		if (category.image) {
 			try {
 				await deleteFromCloudinary(category.image);
-			} catch (error) {
-				console.log("Error deleting image:", error);
-			}
+					} catch (error) {
+			logger.error("Error deleting image:", error);
+		}
 		}
 
 		await categoryModel.findByIdAndDelete(id);
