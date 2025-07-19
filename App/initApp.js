@@ -132,6 +132,27 @@ export const initApp = () => {
       });
    });
 
+   // Debug endpoint to check authentication
+   app.get('/debug/auth', (req, res) => {
+      const cookies = req.cookies;
+      const authHeader = req.headers.authorization;
+      const hasAccessToken = !!cookies.accessToken;
+      const hasAuthHeader = !!authHeader;
+      
+      res.json({
+         success: true,
+         message: 'Auth debug info',
+         data: {
+            hasAccessToken,
+            hasAuthHeader,
+            authHeaderType: authHeader ? authHeader.split(' ')[0] : null,
+            cookies: Object.keys(cookies),
+            origin: req.headers.origin,
+            userAgent: req.headers['user-agent']
+         }
+      });
+   });
+
    // Comprehensive health check endpoint - all health data in one place
    app.get('/health', async (req, res) => {
       try {
