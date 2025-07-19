@@ -4,14 +4,30 @@ import logger from './logger.js';
 let redis = null;
 
 try {
-   redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: process.env.REDIS_PORT || 6379,
-      password: process.env.REDIS_PASSWORD,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
-   });
+   // Use Upstash Redis URL if available, otherwise fall back to individual config
+   const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+   
+   if (redisUrl) {
+      // Use URL connection for Upstash Redis
+      redis = new Redis(redisUrl, {
+         retryDelayOnFailover: 100,
+         maxRetriesPerRequest: 3,
+         lazyConnect: true,
+         tls: {
+            rejectUnauthorized: false
+         }
+      });
+   } else {
+      // Fallback to individual config (for local development)
+      redis = new Redis({
+         host: process.env.REDIS_HOST || 'localhost',
+         port: process.env.REDIS_PORT || 6379,
+         password: process.env.REDIS_PASSWORD,
+         retryDelayOnFailover: 100,
+         maxRetriesPerRequest: 3,
+         lazyConnect: true,
+      });
+   }
 
    redis.on('connect', () => {
       logger.info('Connected to Redis successfully');
