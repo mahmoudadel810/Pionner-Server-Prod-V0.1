@@ -6,7 +6,16 @@ import logger from "../utils/logger.js";
 
 export const protect= async (req, res, next) => {
 	try {
-		const accessToken = req.cookies.accessToken;
+		// Check for token in cookies first, then in Authorization header
+		let accessToken = req.cookies.accessToken;
+		
+		// If no cookie token, check Authorization header
+		if (!accessToken) {
+			const authHeader = req.headers.authorization;
+			if (authHeader && authHeader.startsWith('Bearer ')) {
+				accessToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+			}
+		}
 
 		if (!accessToken) {
 			return res.status(401).json({ 

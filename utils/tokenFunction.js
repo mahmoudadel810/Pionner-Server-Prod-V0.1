@@ -6,7 +6,7 @@ import logger from "./logger.js";
 //generate tokens for access token and refresh token
 export const generateTokens = (userId) => {
     const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "15m",
+        expiresIn: "1h",
     });
 
     const refreshToken = jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
@@ -37,24 +37,30 @@ export const setCookies = (res, accessToken, refreshToken) => {
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? "strict" : "lax",
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        sameSite: isProduction ? "none" : "lax", // Changed from "strict" to "none" for cross-origin
+        maxAge: 60 * 60 * 1000, // 1 hour
         path: "/",
+        domain: isProduction ? ".onrender.com" : undefined, // Allow subdomain sharing
     });
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? "strict" : "lax",
+        sameSite: isProduction ? "none" : "lax", // Changed from "strict" to "none" for cross-origin
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
+        domain: isProduction ? ".onrender.com" : undefined, // Allow subdomain sharing
     });
+
+    // Also set tokens in headers for frontend access
+    res.setHeader('X-Access-Token', accessToken);
+    res.setHeader('X-Refresh-Token', refreshToken);
 };
 
 //decode token function
 export const tokenFunction = ({ payload, generate = true }) => {
     if (generate) {
         return jwt.sign({ _id: payload }, process.env.ACCESS_TOKEN_SECRET, {
-            expiresIn: "15m",
+            expiresIn: "1h",
         });
     } else {
         try {
