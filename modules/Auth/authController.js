@@ -36,7 +36,7 @@ export const signUp = asyncHandler(async (req, res, next) => {
 	const confirmationToken = tokenFunction({ payload: user._id, generate: true });
 
 	// Send confirmation email
-	const confirmationLink = `${process.env.CLIENT_URL}/confirm-email/${confirmationToken}`;
+	const confirmationLink = `${process.env.CLIENT_URL || 'https://pionner-ecommerce-project.vercel.app'}/confirm-email/${confirmationToken}`;
 
 	const Send = await sendEmail({
 		to: user.email,
@@ -217,7 +217,16 @@ export const logout = async (req, res, next) => {
 
 export const refreshToken = async (req, res, next) => {
 	try {
-		const refreshToken = req.cookies.refreshToken;
+		// Check for refresh token in cookies first, then in Authorization header
+		let refreshToken = req.cookies.refreshToken;
+		
+		// If no cookie token, check Authorization header
+		if (!refreshToken) {
+			const authHeader = req.headers.authorization;
+			if (authHeader && authHeader.startsWith('Bearer ')) {
+				refreshToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+			}
+		}
 
 		if (!refreshToken) {
 			return res.status(401).json({ 
@@ -239,14 +248,19 @@ export const refreshToken = async (req, res, next) => {
 			}
 		}
 
-		const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+		const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
 
+		// Set cookie for same-origin requests
 		res.cookie("accessToken", accessToken, {
-			httpOnly: true,
+			httpOnly: false, // Allow frontend to access
 			secure: process.env.NODE_ENV === "production",
-			sameSite: "strict",
-			maxAge: 15 * 60 * 1000,
+			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+			maxAge: 60 * 60 * 1000, // 1 hour
+			path: "/",
 		});
+
+		// Also set token in header for cross-origin requests
+		res.setHeader('X-Access-Token', accessToken);
 
 		res.json({ 
 			success: true,

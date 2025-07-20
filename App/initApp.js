@@ -55,7 +55,7 @@ export const initApp = () => {
             styleSrc: ["'self'", "'unsafe-inline'"],
             scriptSrc: ["'self'"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://pionner.vercel.app", "https://pionner-server-prod-v0-1.onrender.com"],
+            connectSrc: ["'self'", "https://pionner.vercel.app", "https://pionner-ecommerce-project.vercel.app", "https://pionner-server-prod-v0-1.onrender.com"],
          },
       } : false,
       crossOriginEmbedderPolicy: false,
@@ -66,17 +66,17 @@ export const initApp = () => {
    const corsOptions = {
       origin: isProduction 
          ? [
-            process.env.CLIENT_URL || 'https://your-frontend-domain.com',
+            process.env.CLIENT_URL || 
+            'https://pionner-ecommerce-project.vercel.app',
             'https://pionner.vercel.app',
-            'https://pionner-frontend.vercel.app',
-            'https://pionner-frontend-v0-1.vercel.app'
+          
          ].filter(Boolean)
          : ["http://localhost:5173", "http://localhost:3000", "http://localhost:3001"],
       credentials: true,
       optionsSuccessStatus: 200,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-      exposedHeaders: ['Content-Range', 'X-Content-Range']
+      exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Access-Token', 'X-Refresh-Token']
    };
    app.use(cors(corsOptions));
 

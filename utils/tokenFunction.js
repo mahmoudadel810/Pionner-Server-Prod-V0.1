@@ -36,14 +36,14 @@ export const setCookies = (res, accessToken, refreshToken) => {
     
     // Set cookies for same-origin requests
     res.cookie("accessToken", accessToken, {
-        httpOnly: true,
+        httpOnly: false, // Allow frontend to access
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         maxAge: 60 * 60 * 1000, // 1 hour
         path: "/",
     });
     res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
+        httpOnly: false, // Allow frontend to access
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
