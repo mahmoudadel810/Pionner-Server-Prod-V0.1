@@ -164,6 +164,25 @@ export const initApp = () => {
       });
    });
 
+   // Authentication test endpoint
+   app.get('/auth-test', (req, res) => {
+      const accessToken = req.cookies.accessToken;
+      const authHeader = req.headers.authorization;
+      
+      res.status(200).json({
+         success: true,
+         message: 'Authentication test',
+         timestamp: new Date().toISOString(),
+         hasAccessToken: !!accessToken,
+         hasAuthHeader: !!authHeader,
+         cookies: Object.keys(req.cookies),
+         headers: {
+            authorization: !!authHeader,
+            cookie: !!req.headers.cookie
+         }
+      });
+   });
+
    // Comprehensive health check endpoint - all health data in one place
    app.get('/health', async (req, res) => {
       try {
