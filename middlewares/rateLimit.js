@@ -12,7 +12,7 @@ const keyGenerator = (req) => {
 // General API rate limiter
 export const apiLimiter = rateLimit({
    windowMs: 15 * 60 * 1000, // 15 minutes
-   max: 800, // limit each IP to 800 requests per windowMs
+   max: 1500, // limit each IP to 1500 requests per windowMs
    keyGenerator,
    message: {
       success: false,
@@ -27,7 +27,7 @@ export const apiLimiter = rateLimit({
 // Auth routes rate limiter (more strict)
 export const authLimiter = rateLimit({
    windowMs: 15 * 60 * 1000, // 15 minutes
-   max: 5, // limit each IP to 5 auth attempts per windowMs
+   max: 20, // limit each IP to 20 auth attempts per windowMs
    keyGenerator,
    message: {
       success: false,
