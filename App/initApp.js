@@ -55,19 +55,33 @@ export const initApp = () => {
             styleSrc: ["'self'", "'unsafe-inline'"],
             scriptSrc: ["'self'"],
             imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "https://pionner.vercel.app", "https://pionner-server-prod-v0-1.onrender.com"],
          },
       } : false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: "cross-origin" }
    }));
 
    // CORS configuration
    const corsOptions = {
       origin: isProduction 
-         ? [process.env.CLIENT_URL || 'https://your-frontend-domain.com'].filter(Boolean)
-         : ["http://localhost:5173", "http://localhost:3000"],
+         ? [
+            process.env.CLIENT_URL || 'https://your-frontend-domain.com',
+            'https://pionner.vercel.app',
+            'https://pionner-frontend.vercel.app',
+            'https://pionner-frontend-v0-1.vercel.app'
+         ].filter(Boolean)
+         : ["http://localhost:5173", "http://localhost:3000", "http://localhost:3001"],
       credentials: true,
-      optionsSuccessStatus: 200
+      optionsSuccessStatus: 200,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+      exposedHeaders: ['Content-Range', 'X-Content-Range']
    };
    app.use(cors(corsOptions));
+
+   // Handle preflight requests
+   app.options('*', cors(corsOptions));
 
    // Body parsing middleware
    app.use(express.json({ limit: "10mb" }));
@@ -97,7 +111,14 @@ export const initApp = () => {
    app.use((req, res, next) => {
       req.startTime = Date.now();
       const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
-      logger.http(`${req.method} ${req.originalUrl} - ${clientIP}`);
+      const origin = req.headers.origin;
+      logger.http(`${req.method} ${req.originalUrl} - ${clientIP} - Origin: ${origin}`);
+      
+      // Log CORS-related headers for debugging
+      if (req.method === 'OPTIONS') {
+         logger.info(`CORS Preflight: ${req.originalUrl} from ${origin}`);
+      }
+      
       next();
    });
 
@@ -132,24 +153,14 @@ export const initApp = () => {
       });
    });
 
-   // Debug endpoint to check authentication
-   app.get('/debug/auth', (req, res) => {
-      const cookies = req.cookies;
-      const authHeader = req.headers.authorization;
-      const hasAccessToken = !!cookies.accessToken;
-      const hasAuthHeader = !!authHeader;
-      
-      res.json({
+   // CORS test endpoint
+   app.get('/cors-test', (req, res) => {
+      res.status(200).json({
          success: true,
-         message: 'Auth debug info',
-         data: {
-            hasAccessToken,
-            hasAuthHeader,
-            authHeaderType: authHeader ? authHeader.split(' ')[0] : null,
-            cookies: Object.keys(cookies),
-            origin: req.headers.origin,
-            userAgent: req.headers['user-agent']
-         }
+         message: 'CORS is working properly!',
+         timestamp: new Date().toISOString(),
+         origin: req.headers.origin,
+         method: req.method
       });
    });
 

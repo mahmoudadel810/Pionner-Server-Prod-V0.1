@@ -6,26 +6,12 @@ import logger from "../utils/logger.js";
 
 export const protect= async (req, res, next) => {
 	try {
-		// Check for token in cookies first, then Authorization header
-		let accessToken = req.cookies.accessToken;
-		
-		// If no token in cookies, check Authorization header
-		if (!accessToken) {
-			const authHeader = req.headers.authorization;
-			if (authHeader && authHeader.startsWith('Bearer ')) {
-				accessToken = authHeader.substring(7); // Remove 'Bearer ' prefix
-			}
-		}
+		const accessToken = req.cookies.accessToken;
 
 		if (!accessToken) {
 			return res.status(401).json({ 
 				success: false,
-				message: "Unauthorized - No access token provided. Please log in first.",
-				debug: {
-					hasCookies: !!req.cookies.accessToken,
-					hasAuthHeader: !!req.headers.authorization,
-					authHeaderType: req.headers.authorization ? req.headers.authorization.split(' ')[0] : null
-				}
+				message: "Unauthorized - No access token provided" 
 			});
 		}
 
