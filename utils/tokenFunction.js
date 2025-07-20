@@ -34,24 +34,23 @@ export const storeRefreshToken = async (userId, refreshToken) => {
 export const setCookies = (res, accessToken, refreshToken) => {
     const isProduction = process.env.NODE_ENV === "production";
     
+    // Set cookies for same-origin requests
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? "none" : "lax", // Changed from "strict" to "none" for cross-origin
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 60 * 60 * 1000, // 1 hour
         path: "/",
-        domain: isProduction ? ".onrender.com" : undefined, // Allow subdomain sharing
     });
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? "none" : "lax", // Changed from "strict" to "none" for cross-origin
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
-        domain: isProduction ? ".onrender.com" : undefined, // Allow subdomain sharing
     });
 
-    // Also set tokens in headers for frontend access
+    // Always set tokens in headers for cross-origin frontend access
     res.setHeader('X-Access-Token', accessToken);
     res.setHeader('X-Refresh-Token', refreshToken);
 };
