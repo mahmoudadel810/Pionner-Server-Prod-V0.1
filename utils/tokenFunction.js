@@ -41,6 +41,7 @@ export const setCookies = (res, accessToken, refreshToken) => {
         sameSite: isProduction ? "none" : "lax",
         maxAge: 60 * 60 * 1000, // 1 hour
         path: "/",
+        domain: isProduction ? undefined : undefined, // Let browser handle domain
     });
     res.cookie("refreshToken", refreshToken, {
         httpOnly: false, // Allow frontend to access
@@ -48,6 +49,7 @@ export const setCookies = (res, accessToken, refreshToken) => {
         sameSite: isProduction ? "none" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
+        domain: isProduction ? undefined : undefined, // Let browser handle domain
     });
 
     // Always set tokens in headers for cross-origin frontend access
