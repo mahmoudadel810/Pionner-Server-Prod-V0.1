@@ -49,15 +49,7 @@ export const initApp = () => {
 
    // Security middleware
    app.use(helmet({
-      contentSecurityPolicy: isProduction ? {
-         directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://pionner.vercel.app", "https://pionner-ecommerce-project.vercel.app", "https://pionner-server-prod-v0-1.onrender.com"],
-         },
-      } : false,
+      contentSecurityPolicy: false, // Disabled for testing - too restrictive
       crossOriginEmbedderPolicy: false,
       crossOriginResourcePolicy: { policy: "cross-origin" }
    }));
