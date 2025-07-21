@@ -14,7 +14,8 @@ import logger from "../utils/logger.js";
 import { apiLimiter, authLimiter, paymentLimiter } from "../middlewares/rateLimit.js";
 import { getHealthStatus } from "../utils/healthMonitor.js";
 
-export const initApp = () => {
+export const initApp = () =>
+{
    // Load environment variables
    dotenv.config({
       path: path.resolve('./config/.env'),
@@ -22,67 +23,71 @@ export const initApp = () => {
       safe: true
    });
 
-   const isProduction = process.env.NODE_ENV === 'production';
-   
-   // Initialize services
-   try {
-      initCloudinary();
-   } catch (error) {
-      logger.warn('Cloudinary initialization failed:', error.message);
-   }
-   
-   try {
-      connectDB();
-   } catch (error) {
-      logger.error('Database connection failed:', error.message);
-      throw error; // Database is critical, so we throw
-   }
-
-   // Create Express app
    const app = express();
    const PORT = process.env.PORT || 3000;
+   const isProduction = process.env.NODE_ENV === 'production';
 
-   // Trust proxy configuration for production (needed for rate limiting behind load balancers)
-   if (isProduction) {
+   // Initialize critical services
+   initializeServices();
+
+   // Configure Express app
+   configureSecurityMiddleware(app, isProduction);
+   configureCORS(app, isProduction);
+   configureBodyParsing(app);
+   configureRateLimiting(app);
+   configureRoutes(app);
+   configureErrorHandling(app);
+
+   // Start server
+   const server = startServer(app, PORT);
+
+   return { app, server };
+};
+
+// Service initialization
+const initializeServices = () =>
+{
+   try
+   {
+      initCloudinary();
+      logger.info('Cloudinary initialized successfully');
+   } catch (error)
+   {
+      logger.warn('Cloudinary initialization failed:', error.message);
+   }
+
+   try
+   {
+      connectDB();
+      logger.info('Database connected successfully');
+   } catch (error)
+   {
+      logger.error('Database connection failed:', error.message);
+      throw error;
+   }
+};
+
+// Security middleware configuration
+const configureSecurityMiddleware = (app, isProduction) =>
+{
+   // Trust proxy for production (needed for rate limiting behind load balancers)
+   if (isProduction)
+   {
       app.set('trust proxy', 1);
    }
 
-   // Security middleware
+   // Helmet security headers
    app.use(helmet({
-      contentSecurityPolicy: false, // Disabled for testing - too restrictive
+      contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
       crossOriginResourcePolicy: { policy: "cross-origin" }
    }));
 
-   // CORS configuration
-   const corsOptions = {
-      origin: isProduction 
-         ? [
-            process.env.CLIENT_URL || 
-            'https://pionner-ecommerce-project.vercel.app',
-            'https://pionner.vercel.app',
-          
-         ].filter(Boolean)
-         : ["http://localhost:5173", "http://localhost:3000", "http://localhost:3001"],
-      credentials: true,
-      optionsSuccessStatus: 200,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-      exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Access-Token', 'X-Refresh-Token']
-   };
-   app.use(cors(corsOptions));
-
-   // Handle preflight requests
-   app.options('*', cors(corsOptions));
-
-   // Body parsing middleware
-   app.use(express.json({ limit: "10mb" }));
-   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-   app.use(cookieParser());
-
    // Additional security headers for production
-   if (isProduction) {
-      app.use((req, res, next) => {
+   if (isProduction)
+   {
+      app.use((req, res, next) =>
+      {
          res.setHeader('X-Content-Type-Options', 'nosniff');
          res.setHeader('X-Frame-Options', 'DENY');
          res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -93,41 +98,101 @@ export const initApp = () => {
 
    // Compression middleware
    app.use(compression({ level: 6 }));
+};
 
-   // Rate limiting
-   app.use('/api/v1/', apiLimiter);
-   app.use('/api/v1/auth', authLimiter);
-   app.use('/api/v1/payments', paymentLimiter);
+// CORS configuration
+const configureCORS = (app, isProduction) =>
+{
+   const allowedOrigins = isProduction
+      ? [
+         process.env.CLIENT_URL,
+         'https://pionner-v-1.onrender.com/'
+      ].filter(Boolean)
+      : [
+         "http://localhost:5173",
+         "http://localhost:3000",
+         "http://localhost:3001"
+      ];
+
+   const corsOptions = {
+      origin: (origin, callback) =>
+      {
+         // Allow requests with no origin (mobile apps, curl, postman, etc.)
+         if (!origin) return callback(null, true);
+
+         if (allowedOrigins.includes(origin))
+         {
+            callback(null, true);
+         } else
+         {
+            logger.warn(`CORS blocked origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+         }
+      },
+      credentials: true,
+      optionsSuccessStatus: 200,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: [
+         'Content-Type',
+         'Authorization',
+         'X-Requested-With',
+         'Accept',
+         'Origin'
+      ],
+      exposedHeaders: [
+         'Content-Range',
+         'X-Content-Range',
+         'X-Access-Token',
+         'X-Refresh-Token'
+      ]
+   };
+
+   app.use(cors(corsOptions));
+   app.options('*', cors(corsOptions));
+};
+
+// Body parsing middleware
+const configureBodyParsing = (app) =>
+{
+   app.use(express.json({ limit: "10mb" }));
+   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+   app.use(cookieParser());
 
    // Request logging middleware
-   app.use((req, res, next) => {
-      req.startTime = Date.now();
+   app.use((req, res, next) =>
+   {
       const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
-      const origin = req.headers.origin;
-      logger.http(`${req.method} ${req.originalUrl} - ${clientIP} - Origin: ${origin}`);
-      
-      // Log CORS-related headers for debugging
-      if (req.method === 'OPTIONS') {
-         logger.info(`CORS Preflight: ${req.originalUrl} from ${origin}`);
-      }
-      
+      logger.http(`${req.method} ${req.originalUrl} - ${clientIP}`);
       next();
    });
+};
 
-   // API Routes 
-   app.use(`/api/v1/auth`, AllRoutes.authRoutes);
-   app.use(`/api/v1/categories`, AllRoutes.categoryRoutes);
-   app.use(`/api/v1/products`, AllRoutes.productRoutes);
-   app.use(`/api/v1/cart`, AllRoutes.cartRoutes);
-   app.use(`/api/v1/coupons`, AllRoutes.couponRoutes);
-   app.use(`/api/v1/payments`, AllRoutes.paymentRoutes);
-   app.use(`/api/v1/analytics`, AllRoutes.analyticsRoutes);
-   app.use(`/api/v1/orders`, AllRoutes.orderRoutes);
-   app.use(`/api/v1/contact`, AllRoutes.contactUsRoutes);
-   app.use(`/api/v1/wishlist`, AllRoutes.wishlistRoutes);
+// Rate limiting configuration
+const configureRateLimiting = (app) =>
+{
+   app.use('/api/v1/', apiLimiter);
+   app.use('/api/v1/auth/', authLimiter);
+   app.use('/api/v1/payments/', paymentLimiter);
+};
 
-   // Root endpoint for API information
-   app.get('/', (req, res) => {
+// Routes configuration
+const configureRoutes = (app) =>
+{
+   // API Routes with consistent trailing slash handling
+   app.use('/api/v1/auth/', AllRoutes.authRoutes);
+   app.use('/api/v1/categories/', AllRoutes.categoryRoutes);
+   app.use('/api/v1/products/', AllRoutes.productRoutes);
+   app.use('/api/v1/cart/', AllRoutes.cartRoutes);
+   app.use('/api/v1/coupons/', AllRoutes.couponRoutes);
+   app.use('/api/v1/payments/', AllRoutes.paymentRoutes);
+   app.use('/api/v1/analytics/', AllRoutes.analyticsRoutes);
+   app.use('/api/v1/orders/', AllRoutes.orderRoutes);
+   app.use('/api/v1/contact/', AllRoutes.contactUsRoutes);
+   app.use('/api/v1/wishlist/', AllRoutes.wishlistRoutes);
+
+   // Root endpoint
+   app.get('/', (req, res) =>
+   {
       res.status(200).json({
          success: true,
          message: 'TheShop API is running!',
@@ -136,89 +201,71 @@ export const initApp = () => {
          timestamp: new Date().toISOString(),
          endpoints: {
             health: '/health',
-            auth: '/api/v1/auth',
-            products: '/api/v1/products',
-            categories: '/api/v1/categories',
-            orders: '/api/v1/orders',
-            payments: '/api/v1/payments'
+            auth: '/api/v1/auth/',
+            products: '/api/v1/products/',
+            categories: '/api/v1/categories/',
+            orders: '/api/v1/orders/',
+            payments: '/api/v1/payments/',
+            cart: '/api/v1/cart/',
+            wishlist: '/api/v1/wishlist/',
+            analytics: '/api/v1/analytics/',
+            contact: '/api/v1/contact/',
+            coupons: '/api/v1/coupons/'
          }
       });
    });
 
-   // CORS test endpoint
-   app.get('/cors-test', (req, res) => {
-      res.status(200).json({
-         success: true,
-         message: 'CORS is working properly!',
-         timestamp: new Date().toISOString(),
-         origin: req.headers.origin,
-         method: req.method
-      });
-   });
-
-   // Authentication test endpoint
-   app.get('/auth-test', (req, res) => {
-      const accessToken = req.cookies.accessToken;
-      const authHeader = req.headers.authorization;
-      
-      res.status(200).json({
-         success: true,
-         message: 'Authentication test',
-         timestamp: new Date().toISOString(),
-         hasAccessToken: !!accessToken,
-         hasAuthHeader: !!authHeader,
-         cookies: Object.keys(req.cookies),
-         headers: {
-            authorization: !!authHeader,
-            cookie: !!req.headers.cookie
-         }
-      });
-   });
-
-   // Comprehensive health check endpoint - all health data in one place
-   app.get('/health', async (req, res) => {
-      try {
+   // Health check endpoint
+   app.get('/health', async (req, res) =>
+   {
+      try
+      {
          const healthData = await getHealthStatus(req);
-         
-         // Set appropriate status code based on health
-         if (!healthData.success) {
-            res.status(503);
-         } else {
-            res.status(200);
-         }
-         
-         res.json(healthData);
-      } catch (error) {
+         const statusCode = healthData.success ? 200 : 503;
+         res.status(statusCode).json(healthData);
+      } catch (error)
+      {
          logger.error('Health check failed:', error.message);
          res.status(500).json({
             success: false,
             message: 'Health check failed',
-         timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString(),
             error: error.message
-      });
+         });
       }
    });
+};
 
-   // Error Handling 
+// Error handling configuration
+const configureErrorHandling = (app) =>
+{
    app.use(notFound);
    app.use(errorHandler);
+};
 
-   // Create HTTP server
+// Server startup
+const startServer = (app, PORT) =>
+{
    const server = createServer(app);
 
-   // Start server
-   server.listen(PORT, () => {
-      logger.info(`Server is running on Port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+   server.listen(PORT, () =>
+   {
+      logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
    });
 
    // Graceful shutdown
-   process.on('SIGTERM', () => {
-      logger.info('SIGTERM received, shutting down gracefully');
-      server.close(() => {
-         logger.info('Process terminated');
+   const gracefulShutdown = () =>
+   {
+      logger.info('Received shutdown signal, closing server gracefully...');
+      server.close(() =>
+      {
+         logger.info('Server closed. Process terminated.');
          process.exit(0);
       });
-   });
+   };
 
-   return { app, server };
-}; 
+   process.on('SIGTERM', gracefulShutdown);
+   process.on('SIGINT', gracefulShutdown);
+
+   return server;
+};

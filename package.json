@@ -5,10 +5,16 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "build": "npm install --only=production",
+    "build": "pnpm install --prod",
     "dev": "nodemon index.js"
   },
-  "keywords": ["ecommerce", "api", "nodejs", "express", "mongodb"],
+  "keywords": [
+    "ecommerce",
+    "api",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
   "author": "TheShop Team",
   "license": "ISC",
   "description": "TheShop E-commerce Backend API - Production Ready",
@@ -39,6 +45,8 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "jest": "^30.0.4",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.1.3"
   }
 }
