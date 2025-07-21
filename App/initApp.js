@@ -213,12 +213,12 @@ const configureRoutes = (app) =>
             coupons: '/api/v1/coupons/'
          }
       });
-   });
+   }); //latest
 
    // Health check endpoint
    app.get('/health', async (req, res) =>
    {
-      try
+      try 
       {
          const healthData = await getHealthStatus(req);
          const statusCode = healthData.success ? 200 : 503;
