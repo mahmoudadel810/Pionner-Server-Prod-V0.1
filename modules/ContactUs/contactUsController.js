@@ -62,7 +62,7 @@ export const createContact = async (req, res, next) => {
       });
 
       res.status(201).json({
-         status: "success",
+         success: true,
          message: "Contact form submitted successfully. We'll get back to you soon!",
          data: {
             contact: {
