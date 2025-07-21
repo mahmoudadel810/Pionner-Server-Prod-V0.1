@@ -257,6 +257,7 @@ export const refreshToken = async (req, res, next) => {
 			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 			maxAge: 60 * 60 * 1000, // 1 hour
 			path: "/",
+			domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser handle domain
 		});
 
 		// Also set token in header for cross-origin requests
