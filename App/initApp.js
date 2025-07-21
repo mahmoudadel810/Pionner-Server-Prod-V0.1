@@ -107,9 +107,7 @@ const configureCORS = (app, isProduction) =>
       ? [
          process.env.CLIENT_URL,
          'https://pionner-v-1.onrender.com',
-         'https://pionner-933evbzpp-mahmoudadel810s-projects.vercel.app',
-         'https://pionner-ecommerce-project-ja7dnb5sp-mahmoudadel810s-projects.vercel.app'
-      ].filter(Boolean)
+      ]
       : [
          "http://localhost:5173",
          "http://localhost:3000",
