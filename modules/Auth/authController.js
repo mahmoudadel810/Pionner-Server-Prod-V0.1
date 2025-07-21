@@ -146,7 +146,7 @@ export const login = asyncHandler(async (req, res, next) => {
 	
 	// Check if user exists
 	if (!user) {
-		return next(new AppError('User not found', 404));
+		return next(new AppError('User not found', 400));
 	}
 
 	// Check if user has confirmed their email
