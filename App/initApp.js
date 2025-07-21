@@ -106,7 +106,9 @@ const configureCORS = (app, isProduction) =>
    const allowedOrigins = isProduction
       ? [
          process.env.CLIENT_URL,
-         'https://pionner-v-1.onrender.com/'
+         'https://pionner-v-1.onrender.com',
+         'https://pionner-933evbzpp-mahmoudadel810s-projects.vercel.app',
+         'https://pionner-ecommerce-project-ja7dnb5sp-mahmoudadel810s-projects.vercel.app'
       ].filter(Boolean)
       : [
          "http://localhost:5173",
@@ -126,7 +128,10 @@ const configureCORS = (app, isProduction) =>
          } else
          {
             logger.warn(`CORS blocked origin: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
+            // Return a 403 Forbidden error for CORS, not a generic 500
+            const corsError = new Error('Not allowed by CORS');
+            corsError.statusCode = 403;
+            callback(corsError);
          }
       },
       credentials: true,

@@ -103,42 +103,64 @@ export const getSearchSuggestions = async (req, res, next) => {
 //==================================Get Featured Products======================================
 
 export const getFeaturedProducts = async (req, res, next) => {
-	try {
-		// Check if Redis is available
-		if (redis) {
-			let featuredProducts = await redis.get("featured_products");
-			if (featuredProducts) {
-				return res.json({
-					success: true,
-					message: "Featured products retrieved from cache",
-					data: JSON.parse(featuredProducts)
-				});
-			}
-		}
+    try {
+        // Check if Redis is available
+        if (redis) {
+            try {
+                let featuredProducts = await redis.get("featured_products");
+                if (featuredProducts) {
+                    try {
+                        const parsed = JSON.parse(featuredProducts);
+                        return res.json({
+                            success: true,
+                            message: "Featured products retrieved from cache",
+                            data: parsed
+                        });
+                    } catch (parseErr) {
+                        logger.error("Error parsing featured products from Redis cache", parseErr);
+                        // Fallback to DB fetch below
+                    }
+                }
+            } catch (redisErr) {
+                logger.error("Redis error in getFeaturedProducts", redisErr);
+                // Fallback to DB fetch below
+            }
+        }
 
-		// Get featured products from database
-		const featuredProducts = await productModel.find({ isFeatured: true }).lean();
+        // Get featured products from database
+        let featuredProducts;
+        try {
+            featuredProducts = await productModel.find({ isFeatured: true }).lean();
+        } catch (dbErr) {
+            logger.error("MongoDB error in getFeaturedProducts", dbErr);
+            return errorHandler(dbErr, req, res, next);
+        }
 
-		if (!featuredProducts.length) {
-			return res.status(404).json({ 
-				success: false,
-				message: "No featured products found" 
-			});
-		}
+        if (!featuredProducts.length) {
+            return res.status(404).json({ 
+                success: false,
+                message: "No featured products found" 
+            });
+        }
 
-		// Cache the results if Redis is available
-		if (redis) {
-			await redis.set("featured_products", JSON.stringify(featuredProducts));
-		}
+        // Cache the results if Redis is available
+        if (redis) {
+            try {
+                await redis.set("featured_products", JSON.stringify(featuredProducts));
+            } catch (cacheErr) {
+                logger.error("Error caching featured products in Redis", cacheErr);
+            }
+        }
 
-		res.json({
-			success: true,
-			message: "Featured products retrieved successfully",
-			data: featuredProducts
-		});
-	} catch (error) {
-		errorHandler(error, req, res, next);
-	}
+        res.json({
+            success: true,
+            message: "Featured products retrieved successfully",
+            data: featuredProducts
+        });
+    } catch (error) {
+        logger.error("Unhandled error in getFeaturedProducts", error);
+        errorHandler(error, req, res, next);
+    }
 };
 
 //==================================Create Product======================================
