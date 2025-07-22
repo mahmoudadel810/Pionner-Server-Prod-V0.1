@@ -9,15 +9,16 @@ const keyGenerator = (req) => {
    return clientIP;
 };
 
-// General API rate limiter
+// Temporarily disabled rate limiting for testing
 export const apiLimiter = rateLimit({
-   windowMs: 3 * 60 * 1000, // 3 minutes
-   max: 4000, // limit each IP to 1500 requests per windowMs
+   windowMs: 60 * 60 * 1000, // 60 minutes (long window to avoid reset during testing)
+   max: 0, // No limit - effectively disables rate limiting
    keyGenerator,
    message: {
       success: false,
-      message: "Too many requests from this IP, please try again later."
+      message: "Rate limiting is currently disabled for testing."
    },
+   skip: () => true, // Skip rate limiting for all requests
    standardHeaders: true,
    legacyHeaders: false,
    skipSuccessfulRequests: false,
