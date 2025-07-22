@@ -34,7 +34,7 @@ export const initApp = () =>
    configureSecurityMiddleware(app, isProduction);
    configureCORS(app, isProduction);
    configureBodyParsing(app);
-   configureRateLimiting(app);
+   // configureRateLimiting(app);
    configureRoutes(app);
    configureErrorHandling(app);
 
