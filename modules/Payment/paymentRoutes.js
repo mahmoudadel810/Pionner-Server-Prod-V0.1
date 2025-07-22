@@ -17,6 +17,13 @@ router.post('/createCheckoutSession',
    paymentController.createCheckoutSession
 );
 
+// Create payment intent (protected)
+router.post('/createPaymentIntent', 
+   protect,
+   validation({ body: createCheckoutSessionValidator }), 
+   paymentController.createPaymentIntent
+);
+
 // Checkout success (public - no auth required)
 router.post('/checkoutSuccess', 
    validation({ body: checkoutSuccessValidator }), 

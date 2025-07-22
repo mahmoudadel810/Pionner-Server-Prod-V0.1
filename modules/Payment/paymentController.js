@@ -282,3 +282,72 @@ async function createNewCoupon(userId) {
 
 	return newCoupon;
 } 
+
+//==================================Create Payment Intent======================================
+
+export const createPaymentIntent = async (req, res, next) => {
+	try {
+		const { products, couponCode } = req.body;
+
+		if (!Array.isArray(products) || products.length === 0) {
+			return res.status(400).json({ 
+				success: false,
+				message: "Invalid or empty products array" 
+			});
+		}
+
+		let totalAmount = 0;
+
+		// Calculate total amount
+		products.forEach((product) => {
+			const amount = Math.round(product.price * 100); // stripe wants in cents
+			totalAmount += amount * product.quantity;
+		});
+
+		// Apply coupon if provided
+		let coupon = null;
+		if (couponCode) {
+			coupon = await couponModel.findOne({ code: couponCode, userId: req.user._id, isActive: true });
+			if (coupon) {
+				totalAmount -= Math.round((totalAmount * coupon.discountPercentage) / 100);
+			}
+		}
+
+		// Create payment intent
+		const paymentIntent = await stripe.paymentIntents.create({
+			amount: totalAmount,
+			currency: "usd",
+			automatic_payment_methods: {
+				enabled: true,
+			},
+			metadata: {
+				userId: req.user._id.toString(),
+				couponCode: couponCode || "",
+				products: JSON.stringify(
+					products.map((p) => ({
+						id: p._id,
+						quantity: p.quantity,
+						price: p.price,
+					}))
+				),
+			},
+		});
+
+		// Create coupon for future use if order is large enough
+		if (totalAmount >= 20000) {
+			await createNewCoupon(req.user._id);
+		}
+		
+		res.status(200).json({ 
+			success: true,
+			message: "Payment intent created successfully",
+			data: {
+				clientSecret: paymentIntent.client_secret,
+				totalAmount: totalAmount / 100 
+			}
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+};
+

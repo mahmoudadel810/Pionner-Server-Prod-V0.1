@@ -107,6 +107,7 @@ const configureCORS = (app, isProduction) =>
       ? [
          process.env.CLIENT_URL,
          'https://pionner-v-1.onrender.com',
+         'https://5174-ihkfje5ha9ofr4jrb6vtx-7f1f3943.manusvm.computer',
          'http://localhost:5173',
          'http://localhost:5174',
          'http://localhost:3000',
@@ -120,7 +121,8 @@ const configureCORS = (app, isProduction) =>
          "http://localhost:3000",
          "http://localhost:3001",
          "http://localhost:4173",
-         "http://localhost:4174"
+         "http://localhost:4174",
+         "https://5174-ihkfje5ha9ofr4jrb6vtx-7f1f3943.manusvm.computer"
       ];
 
    const corsOptions = {

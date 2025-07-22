@@ -88,14 +88,8 @@ export const getAllCategories = async (req, res, next) => {
 		const sortObject = {};
 		sortObject[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-		// Get categories with product count and populate products
+		// Get categories with product count (optimized - no product population)
 		const categories = await categoryModel.getCategoriesWithProductCount();
-		
-		// Populate products for each category
-		for (let category of categories) {
-			const products = await productModel.find({ categoryId: category._id }).select('_id name price image isFeatured').lean();
-			category.products = products;
-		}
 
 		// Apply search and pagination filters
 		let filteredCategories = categories.filter(cat => {
