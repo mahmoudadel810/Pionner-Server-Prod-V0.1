@@ -283,6 +283,89 @@ async function createNewCoupon(userId) {
 	return newCoupon;
 } 
 
+//==================================Payment Intent Success======================================
+
+export const paymentIntentSuccess = async (req, res, next) => {
+  try {
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing paymentIntentId" 
+      });
+    }
+
+    // Retrieve the payment intent from Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status === "succeeded") {
+      // Get user ID from the payment intent metadata
+      const userId = paymentIntent.metadata?.userId;
+      if (!userId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "No userId in payment intent metadata" 
+        });
+      }
+
+      // Check if order already exists for this paymentIntentId
+      const existingOrder = await orderModel.findOne({ 
+        $or: [
+          { stripePaymentIntentId: paymentIntentId },
+          { 'paymentDetails.paymentIntentId': paymentIntentId }
+        ]
+      });
+
+      if (existingOrder) {
+        return res.status(200).json({
+          success: true,
+          message: "Order already exists for this payment intent",
+          data: { 
+            orderId: existingOrder._id, 
+            order: existingOrder 
+          }
+        });
+      }
+
+      // Create the order
+      const order = new orderModel({
+        user: userId,
+        products: JSON.parse(paymentIntent.metadata.products || '[]'),
+        totalAmount: paymentIntent.amount / 100, // Convert from cents to dollars
+        paymentStatus: "paid",
+        paymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
+        paymentDetails: {
+          paymentIntentId: paymentIntent.id,
+          paymentMethod: paymentIntent.payment_method,
+          amount: paymentIntent.amount / 100,
+          currency: paymentIntent.currency,
+          status: paymentIntent.status,
+        },
+        status: 'processing', // Initial order status
+      });
+
+      await order.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Order created successfully",
+        data: { 
+          orderId: order._id, 
+          order 
+        }
+      });
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Payment not completed. Status: ${paymentIntent.status}` 
+      });
+    }
+  } catch (error) {
+    console.error('Payment intent success error:', error);
+    errorHandler(error, req, res, next);
+  }
+};
+
 //==================================Create Payment Intent======================================
 
 export const createPaymentIntent = async (req, res, next) => {
@@ -335,7 +418,13 @@ export const createPaymentIntent = async (req, res, next) => {
 
 		// Create coupon for future use if order is large enough
 		if (totalAmount >= 20000) {
-			await createNewCoupon(req.user._id);
+			try {
+				await createNewCoupon(req.user._id);
+			} catch (error) {
+				// Log the error but don't fail the payment
+				console.warn('Could not create coupon:', error.message);
+				// Continue with payment even if coupon creation fails
+			}
 		}
 		
 		res.status(200).json({ 
