@@ -1,57 +1,47 @@
+// Logger configuration: uses file logging locally, but only console logging on Vercel/production (serverless). Vercel's filesystem is read-only except for /tmp, so we avoid writing to project-root logs/ in production.
+import path from 'path';
 import winston from 'winston';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
-// Define log levels
-const levels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4,
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Define colors for each level
-const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
-};
+const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === 'production';
 
-// Tell winston that you want to link the colors
-winston.addColors(colors);
+let logDir;
+if (isVercel) {
+  logDir = '/tmp/logs';
+  // Optionally create /tmp/logs if file logging is ever enabled
+  // if (!fs.existsSync(logDir)) {
+  //   fs.mkdirSync(logDir, { recursive: true });
+  // }
+} else {
+  logDir = path.join(__dirname, '../logs');
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+}
 
-// Define which level to log based on environment
-const level = () => {
-  const env = process.env.NODE_ENV || 'development';
-  const isDevelopment = env === 'development';
-  return isDevelopment ? 'debug' : 'warn';
-};
-
-// Define format for logs
-const format = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
-  ),
-);
-
-// Define transports
 const transports = [
   new winston.transports.Console(),
-  new winston.transports.File({
-    filename: 'logs/error.log',
-    level: 'error',
-  }),
-  new winston.transports.File({ filename: 'logs/all.log' }),
 ];
 
-// Create the logger
+if (!isVercel) {
+  transports.push(
+    new winston.transports.File({
+      filename: path.join(logDir, 'error.log'),
+      level: 'error',
+    }),
+    new winston.transports.File({
+      filename: path.join(logDir, 'combined.log'),
+    })
+  );
+}
+
 const logger = winston.createLogger({
-  level: level(),
-  levels,
-  format,
+  level: 'info',
+  format: winston.format.json(),
   transports,
 });
 
