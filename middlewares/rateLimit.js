@@ -6,29 +6,29 @@ import rateLimit from "express-rate-limit";
 const keyGenerator = (req) => {
    // Use X-Forwarded-For header if available (when behind proxy)
    const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
-   return clientIP;
+   return req.ip;
 };
 
-// Temporarily disabled rate limiting for testing
+// API rate limiter - very permissive for production
+// Note: In a production environment, you might want to set stricter limits
 export const apiLimiter = rateLimit({
-   windowMs: 60 * 60 * 1000, // 60 minutes (long window to avoid reset during testing)
-   max: 0, // No limit - effectively disables rate limiting
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 1000, // 1000 requests per window per IP
    keyGenerator,
    message: {
       success: false,
-      message: "Rate limiting is currently disabled for testing."
+      message: "Too many requests, please try again later."
    },
-   skip: () => true, // Skip rate limiting for all requests
    standardHeaders: true,
    legacyHeaders: false,
    skipSuccessfulRequests: false,
-   skipFailedRequests: false,
+   skipFailedRequests: true,
 });
 
 // Auth routes rate limiter (more strict)
 export const authLimiter = rateLimit({
    windowMs: 15 * 60 * 1000, // 15 minutes
-   max: 20, // limit each IP to 20 auth attempts per windowMs
+   max: 1000, // limit each IP to 1000 auth attempts per windowMs
    keyGenerator,
    message: {
       success: false,
@@ -43,7 +43,7 @@ export const authLimiter = rateLimit({
 // Payment routes rate limiter (very strict)
 export const paymentLimiter = rateLimit({
    windowMs: 15 * 60 * 1000, // 15 minutes
-   max: 3, // limit each IP to 3 payment attempts per windowMs
+   max: 1000, // limit each IP to 1000 payment attempts per windowMs
    keyGenerator,
    message: {
       success: false,
