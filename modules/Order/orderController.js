@@ -5,6 +5,7 @@ import categoryModel from "../../DB/models/categoryModel.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import { paginationHelper, buildSearchQuery, buildPaginationResponse } from "../../utils/pagination.js";
 import mongoose from "mongoose";
+import sendEmail from '../../service/sendEmail.js';
 
 //==================================Create Order======================================
 
@@ -97,6 +98,20 @@ export const createOrder = async (req, res, next) => {
 			message: "Order created successfully",
 			data: populatedOrder
 		});
+
+		// Send admin notification for new order
+		try {
+			await sendEmail({
+				to: process.env.EMAIL_SMTP_USER,
+				subject: 'New Order Placed',
+				message: `
+					<h2>New Order Received</h2>
+					<p>Order ID: <b>${order._id}</b></p>
+					<p>User: ${req.user.name} (${req.user.email})</p>
+					<p>Total: <b>$${order.totalAmount.toFixed(2)}</b></p>
+				`
+			});
+		} catch (err) { /* ignore admin email errors */ }
 	} catch (error) {
 		errorHandler(error, req, res, next);
 	}
@@ -235,6 +250,20 @@ export const updateOrderStatus = async (req, res, next) => {
 		.populate('user', 'name email')
 		.populate('categoryBreakdown.categoryId', 'name slug');
 
+		if (order) {
+			try {
+				await sendEmail({
+					to: order.user.email,
+					subject: 'Order Status Updated',
+					message: `
+						<h2>Your Order Status Has Changed</h2>
+						<p>Order ID: <b>${order._id}</b></p>
+						<p>New Status: <b>${order.status}</b></p>
+					`
+				});
+			} catch (err) { /* ignore user email errors */ }
+		}
+
 		if (!order) {
 			return res.status(404).json({
 				success: false,
@@ -266,6 +295,20 @@ export const updatePaymentStatus = async (req, res, next) => {
 		)
 		.populate('user', 'name email')
 		.populate('categoryBreakdown.categoryId', 'name slug');
+
+		if (order) {
+			try {
+				await sendEmail({
+					to: order.user.email,
+					subject: 'Order Payment Status Updated',
+					message: `
+						<h2>Your Payment Status Has Changed</h2>
+						<p>Order ID: <b>${order._id}</b></p>
+						<p>New Payment Status: <b>${order.paymentStatus}</b></p>
+					`
+				});
+			} catch (err) { /* ignore user email errors */ }
+		}
 
 		if (!order) {
 			return res.status(404).json({
@@ -605,6 +648,18 @@ export const cancelOrder = async (req, res, next) => {
 
     order.status = 'cancelled';
     await order.save();
+
+    try {
+        await sendEmail({
+            to: order.user.email,
+            subject: 'Order Cancelled',
+            message: `
+                <h2>Your Order Has Been Cancelled</h2>
+                <p>Order ID: <b>${order._id}</b></p>
+                <p>Status: <b>${order.status}</b></p>
+            `
+        });
+    } catch (err) { /* ignore user email errors */ }
 
     res.json({
       success: true,

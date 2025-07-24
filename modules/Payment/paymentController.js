@@ -62,13 +62,7 @@ export const createCheckoutSession = async (req, res, next) => {
 			metadata: {
 				userId: req.user._id.toString(),
 				couponCode: couponCode || "",
-				products: JSON.stringify(
-					products.map((p) => ({
-						id: p._id,
-						quantity: p.quantity,
-						price: p.price,
-					}))
-				),
+				cartSummary: `items:${products.length},total:${totalAmount/100}`
 			},
 		});
 
@@ -406,13 +400,7 @@ export const createPaymentIntent = async (req, res, next) => {
 			metadata: {
 				userId: req.user._id.toString(),
 				couponCode: couponCode || "",
-				products: JSON.stringify(
-					products.map((p) => ({
-						id: p._id,
-						quantity: p.quantity,
-						price: p.price,
-					}))
-				),
+				cartSummary: `items:${products.length},total:${totalAmount/100}`
 			},
 		});
 

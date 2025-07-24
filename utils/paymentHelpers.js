@@ -1,6 +1,7 @@
 import orderModel from '../DB/models/orderModel.js';
 import productModel from '../DB/models/productModel.js';
 import logger from './logger.js';
+import sendEmail from '../service/sendEmail.js';
 
 // Function to create order from Stripe session
 export const createOrderFromSession = async (sessionId, userId) => {
@@ -170,6 +171,33 @@ export const createOrderSafely = async (session, options = {}) => {
 
         const newOrder = new orderModel(orderData);
         await newOrder.save();
+
+        // Send order confirmation email
+        try {
+            const userEmail = orderData.customerInfo?.email;
+            if (userEmail) {
+                await sendEmail({
+                    to: userEmail,
+                    subject: 'Your Order Confirmation - Pioneer',
+                    message: `
+                        <h2>Thank you for your order!</h2>
+                        <p>Order ID: <b>${newOrder._id}</b></p>
+                        <p>Total: <b>$${newOrder.totalAmount.toFixed(2)}</b></p>
+                        <h3>Order Details:</h3>
+                        <ul>
+                            ${newOrder.items.map(item => `
+                                <li>
+                                    ${item.name} (x${item.quantity}) - $${item.price}
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <p>We will notify you when your order ships.</p>
+                    `
+                });
+            }
+        } catch (emailErr) {
+            logger.error('Failed to send order confirmation email:', emailErr);
+        }
 
         logger.info('Order created successfully:', newOrder._id);
         return { created: true, order: newOrder };
