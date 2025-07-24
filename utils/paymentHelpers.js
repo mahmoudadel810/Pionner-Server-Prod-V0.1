@@ -139,7 +139,7 @@ export const createOrderSafely = async (session, options = {}) => {
         const orderData = {
             user: session.metadata.userId,
             stripeSessionId: session.id,
-            status: 'paid',
+            status: 'processing', 
             items: orderItems,
             totalAmount: totalAmount,
             paymentStatus: 'paid',
