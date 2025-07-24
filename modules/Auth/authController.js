@@ -287,7 +287,9 @@ export const getProfile = async (req, res, next) => {
 		res.json({
 			success: true,
 			message: "Profile retrieved successfully",
-			data: req.user
+			data: {
+				user: req.user
+			}
 		});
 	} catch (error) {
 		errorHandler(error, req, res, next);
