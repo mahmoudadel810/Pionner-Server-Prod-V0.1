@@ -36,7 +36,7 @@ export const signUp = asyncHandler(async (req, res, next) => {
 	const confirmationToken = tokenFunction({ payload: user._id, generate: true });
 
 	// Send confirmation email
-	const confirmationLink = `${process.env.CLIENT_URL || 'https://pionner-v-1.onrender.com/'}/confirm-email/${confirmationToken}`;
+	const confirmationLink = `${process.env.CLIENT_URL || 'https://pionner-v2.vercel.app/'}/confirm-email/${confirmationToken}`;
 
 	const Send = await sendEmail({
 		to: user.email,
