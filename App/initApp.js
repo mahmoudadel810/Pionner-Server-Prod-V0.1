@@ -24,7 +24,7 @@ export const initApp = () =>
    });
 
    const app = express();
-   const PORT = process.env.PORT || 3000;
+   const PORT = process.env.PORT || 8000;
    const isProduction = process.env.NODE_ENV === 'production';
 
    // Initialize critical services
@@ -106,6 +106,7 @@ const configureCORS = (app, isProduction) =>
    const allowedOrigins = isProduction
       ? [
          process.env.CLIENT_URL,
+         'https://pionner-v2.vercel.app',
          'https://pionner-v-1.onrender.com',
          'https://5174-ihkfje5ha9ofr4jrb6vtx-7f1f3943.manusvm.computer',
          'http://localhost:5173',
@@ -130,6 +131,11 @@ const configureCORS = (app, isProduction) =>
       {
          // Allow requests with no origin (mobile apps, curl, postman, etc.)
          if (!origin) return callback(null, true);
+
+         // Allow same-origin requests (when frontend and backend are on same domain)
+         if (origin === process.env.CLIENT_URL || origin === process.env.SERVER_URL) {
+            return callback(null, true);
+         }
 
          if (allowedOrigins.includes(origin))
          {
@@ -184,25 +190,25 @@ const configureBodyParsing = (app) =>
 // Rate limiting configuration
 const configureRateLimiting = (app) =>
 {
-   app.use('/api/v1/', apiLimiter);
-   app.use('/api/v1/auth/', authLimiter);
-   app.use('/api/v1/payments/', paymentLimiter);
+   app.use('/api/v2/', apiLimiter);
+   app.use('/api/v2/auth/', authLimiter);
+   app.use('/api/v2/payments/', paymentLimiter);
 };
 
 // Routes configuration
 const configureRoutes = (app) =>
 {
    // API Routes with consistent trailing slash handling
-   app.use('/api/v1/auth/', AllRoutes.authRoutes);
-   app.use('/api/v1/categories/', AllRoutes.categoryRoutes);
-   app.use('/api/v1/products/', AllRoutes.productRoutes);
-   app.use('/api/v1/cart/', AllRoutes.cartRoutes);
-   app.use('/api/v1/coupons/', AllRoutes.couponRoutes);
-   app.use('/api/v1/payments/', AllRoutes.paymentRoutes);
-   app.use('/api/v1/analytics/', AllRoutes.analyticsRoutes);
-   app.use('/api/v1/orders/', AllRoutes.orderRoutes);
-   app.use('/api/v1/contact/', AllRoutes.contactUsRoutes);
-   app.use('/api/v1/wishlist/', AllRoutes.wishlistRoutes);
+   app.use('/api/v2/auth/', AllRoutes.authRoutes);
+   app.use('/api/v2/categories/', AllRoutes.categoryRoutes);
+   app.use('/api/v2/products/', AllRoutes.productRoutes);
+   app.use('/api/v2/cart/', AllRoutes.cartRoutes);
+   app.use('/api/v2/coupons/', AllRoutes.couponRoutes);
+   app.use('/api/v2/payments/', AllRoutes.paymentRoutes);
+   app.use('/api/v2/analytics/', AllRoutes.analyticsRoutes);
+   app.use('/api/v2/orders/', AllRoutes.orderRoutes);
+   app.use('/api/v2/contact/', AllRoutes.contactUsRoutes);
+   app.use('/api/v2/wishlist/', AllRoutes.wishlistRoutes);
 
    // Root endpoint
    app.get('/', (req, res) =>
@@ -210,21 +216,21 @@ const configureRoutes = (app) =>
       res.status(200).json({
          success: true,
          message: 'TheShop API is running!',
-         version: process.env.npm_package_version || '1.0.0',
+         version: process.env.npm_package_version || '2.0.0',
          environment: process.env.NODE_ENV || 'development',
          timestamp: new Date().toISOString(),
          endpoints: {
             health: '/health',
-            auth: '/api/v1/auth/',
-            products: '/api/v1/products/',
-            categories: '/api/v1/categories/',
-            orders: '/api/v1/orders/',
-            payments: '/api/v1/payments/',
-            cart: '/api/v1/cart/',
-            wishlist: '/api/v1/wishlist/',
-            analytics: '/api/v1/analytics/',
-            contact: '/api/v1/contact/',
-            coupons: '/api/v1/coupons/'
+            auth: '/api/v2/auth/',
+            products: '/api/v2/products/',
+            categories: '/api/v2/categories/',
+            orders: '/api/v2/orders/',
+            payments: '/api/v2/payments/',
+            cart: '/api/v2/cart/',
+            wishlist: '/api/v2/wishlist/',
+            analytics: '/api/v2/analytics/',
+            contact: '/api/v2/contact/',
+            coupons: '/api/v2/coupons/'
          }
       });
    }); //latest

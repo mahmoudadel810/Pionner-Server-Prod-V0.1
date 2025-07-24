@@ -35,16 +35,16 @@ export const getHealthStatus = async (req) => {
          }
       },
       endpoints: {
-         auth: '/api/v1/auth',
-         products: '/api/v1/products',
-         categories: '/api/v1/categories',
-         orders: '/api/v1/orders',
-         payments: '/api/v1/payments',
-         analytics: '/api/v1/analytics',
-         cart: '/api/v1/cart',
-         coupons: '/api/v1/coupons',
-         contact: '/api/v1/contact',
-         wishlist: '/api/v1/wishlist'
+               auth: '/api/v2/auth',
+      products: '/api/v2/products',
+      categories: '/api/v2/categories',
+      orders: '/api/v2/orders',
+      payments: '/api/v2/payments',
+      analytics: '/api/v2/analytics',
+      cart: '/api/v2/cart',
+      coupons: '/api/v2/coupons',
+      contact: '/api/v2/contact',
+      wishlist: '/api/v2/wishlist'
       }
    };
 

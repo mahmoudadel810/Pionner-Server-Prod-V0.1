@@ -12,7 +12,7 @@
       "dest": "/index.js",
       "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       "headers": {
-        "cache-control": "no-cache"
+        "cache-control": "no-cache, no-store, must-revalidate"
       }
     },
     {
@@ -20,14 +20,15 @@
       "dest": "/index.js",
       "methods": ["GET", "POST"],
       "headers": {
-        "cache-control": "no-cache"
+        "cache-control": "no-cache, no-store, must-revalidate"
       }
     },
     {
       "src": "/(.*)",
       "dest": "/index.js",
+      "methods": ["GET", "OPTIONS"],
       "headers": {
-        "cache-control": "no-cache"
+        "cache-control": "public, max-age=0, must-revalidate"
       }
     }
   ]
