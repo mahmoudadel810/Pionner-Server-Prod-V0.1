@@ -132,7 +132,9 @@ export const createOrderSafely = async (session, options = {}) => {
                 quantity: productData.quantity,
                 price: product.price,
                 name: product.name,
-                image: product.image
+                image: product.image,
+                category: product.category?.name || product.category || '',
+                categoryId: product.categoryId || (product.category && product.category._id) || ''
             });
         }
 
@@ -141,7 +143,7 @@ export const createOrderSafely = async (session, options = {}) => {
             user: session.metadata.userId,
             stripeSessionId: session.id,
             status: 'processing', 
-            items: orderItems,
+            products: orderItems,
             totalAmount: totalAmount,
             paymentStatus: 'paid',
             paymentMethod: 'stripe',
