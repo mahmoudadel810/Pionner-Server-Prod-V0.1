@@ -108,6 +108,7 @@ const configureCORS = (app, isProduction) =>
          process.env.CLIENT_URL,
          'https://pionner-v2.vercel.app',
          'https://pionner-v21.vercel.app',
+         'https://pionner.vercel.app',
          'https://5174-ihkfje5ha9ofr4jrb6vtx-7f1f3943.manusvm.computer',
          'http://localhost:5173',
          'http://localhost:5174',
