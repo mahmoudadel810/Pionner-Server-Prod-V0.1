@@ -311,12 +311,12 @@ export const paymentIntentSuccess = async (req, res, next) => {
       });
 
       if (existingOrder) {
-        return res.status(200).json({
-          success: true,
+        return res.status(409).json({
+          success: false,
           message: "Order already exists for this payment intent",
-          data: { 
-            orderId: existingOrder._id, 
-            order: existingOrder 
+          data: {
+            orderId: existingOrder._id,
+            order: existingOrder
           }
         });
       }
