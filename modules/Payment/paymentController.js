@@ -324,7 +324,23 @@ export const paymentIntentSuccess = async (req, res, next) => {
       // Create the order
       const order = new orderModel({
         user: userId,
-        products: JSON.parse(paymentIntent.metadata.products || '[]'),
+        // Build full products array with DB lookups for each product
+        products: await Promise.all(
+          (JSON.parse(paymentIntent.metadata.products || '[]')).map(async (item) => {
+            // item: { productId, quantity, price }
+            const product = await productModel.findById(item.productId).populate('categoryId', 'name');
+            if (!product) throw new Error(`Product not found: ${item.productId}`);
+            return {
+              product: product._id,
+              quantity: item.quantity,
+              price: item.price,
+              category: product.categoryId?.name || '',
+              categoryId: product.categoryId?._id || product.categoryId,
+              productName: product.name,
+              productImage: product.image,
+            };
+          })
+        ),
         totalAmount: paymentIntent.amount / 100, // Convert from cents to dollars
         paymentStatus: "paid",
         paymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
