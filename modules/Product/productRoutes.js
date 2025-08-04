@@ -107,4 +107,30 @@ router.patch('/toggleFeaturedProduct/:id',
    productController.toggleFeaturedProduct
 );
 
+// Update product (Admin only)
+router.put('/updateProduct/:id', 
+   protect,
+   adminRoute,
+   validation({ params: productIdValidator }),
+   uploaders.productImage.single('image'),
+   handleMulterError,
+   productController.updateProduct
+);
+
+// Update product stock (Admin only)
+router.patch('/updateStock/:id', 
+   protect,
+   adminRoute,
+   validation({ params: productIdValidator }), 
+   productController.updateProductStock
+);
+
+// Update product price (Admin only)
+router.patch('/updatePrice/:id', 
+   protect,
+   adminRoute,
+   validation({ params: productIdValidator }), 
+   productController.updateProductPrice
+);
+
 export default router; 

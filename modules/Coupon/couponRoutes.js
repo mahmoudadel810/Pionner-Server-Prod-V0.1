@@ -20,4 +20,25 @@ router.post('/validateCoupon',
    couponController.validateCoupon
 );
 
+// Admin routes for coupon management
+router.get('/getAllCoupons', 
+   couponController.getAllCoupons
+);
+
+router.post('/createCoupon', 
+   couponController.createCoupon
+);
+
+router.put('/updateCoupon/:id', 
+   couponController.updateCoupon
+);
+
+router.delete('/deleteCoupon/:id', 
+   couponController.deleteCoupon
+);
+
+router.patch('/toggleStatus/:id', 
+   couponController.toggleCouponStatus
+);
+
 export default router; 

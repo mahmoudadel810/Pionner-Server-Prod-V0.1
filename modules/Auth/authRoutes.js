@@ -84,4 +84,25 @@ router.post('/reset-password',
    authController.resetPassword
 );
 
+// Admin routes (protected, admin only)
+router.get('/getAllUsers', 
+   protect, 
+   authController.getAllUsers
+);
+
+router.patch('/updateUserStatus/:id', 
+   protect, 
+   authController.updateUserStatus
+);
+
+router.patch('/updateUserRole/:id', 
+   protect, 
+   authController.updateUserRole
+);
+
+router.delete('/deleteUser/:id', 
+   protect, 
+   authController.deleteUser
+);
+
 export default router; 

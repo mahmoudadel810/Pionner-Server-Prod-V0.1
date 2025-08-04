@@ -651,4 +651,158 @@ export const updatePassword = async (req, res, next) => {
 	} catch (error) {
 		errorHandler(error, req, res, next);
 	}
+};
+
+//==================================Get All Users (Admin)======================================
+
+export const getAllUsers = async (req, res, next) => {
+	try {
+		const { page = 1, limit = 10, role, status, search } = req.query;
+		const skip = (page - 1) * limit;
+
+		// Build query
+		let query = {};
+		if (role) {
+			query.role = role;
+		}
+		if (status) {
+			query.status = status;
+		}
+		if (search) {
+			query.$or = [
+				{ name: { $regex: search, $options: 'i' } },
+				{ email: { $regex: search, $options: 'i' } },
+				{ phone: { $regex: search, $options: 'i' } }
+			];
+		}
+
+		const users = await userModel.find(query)
+			.select('-password -resetPasswordToken -resetPasswordTokenExpiresIn')
+			.sort({ createdAt: -1 })
+			.skip(skip)
+			.limit(parseInt(limit));
+
+		const totalUsers = await userModel.countDocuments(query);
+
+		res.json({
+			success: true,
+			message: "Users retrieved successfully",
+			data: users,
+			pagination: {
+				currentPage: parseInt(page),
+				totalPages: Math.ceil(totalUsers / limit),
+				totalUsers,
+				hasNextPage: page * limit < totalUsers,
+				hasPrevPage: page > 1
+			}
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+};
+
+//==================================Update User Status (Admin)======================================
+
+export const updateUserStatus = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		const { status } = req.body;
+
+		if (!['active', 'inactive'].includes(status)) {
+			return res.status(400).json({
+				success: false,
+				message: "Status must be either 'active' or 'inactive'"
+			});
+		}
+
+		const user = await userModel.findByIdAndUpdate(
+			id,
+			{ status },
+			{ new: true, select: '-password -resetPasswordToken -resetPasswordTokenExpiresIn' }
+		);
+
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: "User not found"
+			});
+		}
+
+		res.json({
+			success: true,
+			message: "User status updated successfully",
+			data: user
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+};
+
+//==================================Update User Role (Admin)======================================
+
+export const updateUserRole = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		const { role } = req.body;
+
+		if (!['customer', 'admin'].includes(role)) {
+			return res.status(400).json({
+				success: false,
+				message: "Role must be either 'customer' or 'admin'"
+			});
+		}
+
+		const user = await userModel.findByIdAndUpdate(
+			id,
+			{ role },
+			{ new: true, select: '-password -resetPasswordToken -resetPasswordTokenExpiresIn' }
+		);
+
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: "User not found"
+			});
+		}
+
+		res.json({
+			success: true,
+			message: "User role updated successfully",
+			data: user
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+};
+
+//==================================Delete User (Admin)======================================
+
+export const deleteUser = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+
+		// Prevent admin from deleting themselves
+		if (id === req.user._id.toString()) {
+			return res.status(400).json({
+				success: false,
+				message: "You cannot delete your own account"
+			});
+		}
+
+		const user = await userModel.findByIdAndDelete(id);
+
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: "User not found"
+			});
+		}
+
+		res.json({
+			success: true,
+			message: "User deleted successfully"
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
 }; 

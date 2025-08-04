@@ -497,4 +497,113 @@ async function updateFeaturedProductsCache() {
 	} catch (error) {
 			logger.error("error in update cache function", error);
 	}
-} 
+}
+
+//==================================Update Product (Admin)======================================
+
+export const updateProduct = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		const updateData = req.body;
+
+		// Handle file upload from multer or use provided image URL
+		if (req.file) {
+			updateData.image = req.file.path; // Cloudinary URL from multer-storage-cloudinary
+		}
+
+		const product = await productModel.findByIdAndUpdate(
+			id,
+			updateData,
+			{ new: true }
+		);
+
+		if (!product) {
+			return res.status(404).json({
+				success: false,
+				message: "Product not found"
+			});
+		}
+
+		res.json({
+			success: true,
+			message: "Product updated successfully",
+			data: product
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+};
+
+//==================================Update Product Stock (Admin)======================================
+
+export const updateProductStock = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		const { stockQuantity } = req.body;
+
+		if (stockQuantity < 0) {
+			return res.status(400).json({
+				success: false,
+				message: "Stock quantity cannot be negative"
+			});
+		}
+
+		const product = await productModel.findByIdAndUpdate(
+			id,
+			{ stockQuantity },
+			{ new: true }
+		);
+
+		if (!product) {
+			return res.status(404).json({
+				success: false,
+				message: "Product not found"
+			});
+		}
+
+		res.json({
+			success: true,
+			message: "Product stock updated successfully",
+			data: product
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+};
+
+//==================================Update Product Price (Admin)======================================
+
+export const updateProductPrice = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		const { price } = req.body;
+
+		if (price < 0) {
+			return res.status(400).json({
+				success: false,
+				message: "Price cannot be negative"
+			});
+		}
+
+		const product = await productModel.findByIdAndUpdate(
+			id,
+			{ price },
+			{ new: true }
+		);
+
+		if (!product) {
+			return res.status(404).json({
+				success: false,
+				message: "Product not found"
+			});
+		}
+
+		res.json({
+			success: true,
+			message: "Product price updated successfully",
+			data: product
+		});
+	} catch (error) {
+		errorHandler(error, req, res, next);
+	}
+}; 
