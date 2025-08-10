@@ -174,7 +174,7 @@ export const createOrderSafely = async (session, options = {}) => {
         const newOrder = new orderModel(orderData);
         await newOrder.save();
 
-        // Send order confirmation email
+        // Send order confirmation email (SAR currency)
         try {
             const userEmail = orderData.customerInfo?.email;
             if (userEmail) {
@@ -184,12 +184,12 @@ export const createOrderSafely = async (session, options = {}) => {
                     message: `
                         <h2>Thank you for your order!</h2>
                         <p>Order ID: <b>${newOrder._id}</b></p>
-                        <p>Total: <b>$${newOrder.totalAmount.toFixed(2)}</b></p>
+                        <p>Total: <b>﷼${newOrder.totalAmount.toFixed(2)}</b></p>
                         <h3>Order Details:</h3>
                         <ul>
-                            ${newOrder.items.map(item => `
+                            ${(newOrder.products || []).map(item => `
                                 <li>
-                                    ${item.name} (x${item.quantity}) - $${item.price}
+                                    ${item.productName || item.name} (x${item.quantity}) - ﷼${item.price}
                                 </li>
                             `).join('')}
                         </ul>

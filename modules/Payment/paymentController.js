@@ -21,13 +21,13 @@ export const createCheckoutSession = async (req, res, next) => {
 
 		let totalAmount = 0;
 
-		const lineItems = products.map((product) => {
+        const lineItems = products.map((product) => {
 			const amount = Math.round(product.price * 100); // stripe wants u to send in the format of cents
 			totalAmount += amount * product.quantity;
 
 			return {
 				price_data: {
-					currency: "usd", // Using USD for consistency with our tests
+                    currency: "sar",
 					product_data: {
 						name: product.name,
 						images: [product.image],
@@ -46,7 +46,9 @@ export const createCheckoutSession = async (req, res, next) => {
 			}
 		}
 
-		const session = await stripe.checkout.sessions.create({
+    const locale = (req.headers['accept-language'] || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+
+    const session = await stripe.checkout.sessions.create({
 			payment_method_types: ["card"],
 			line_items: lineItems,
 			mode: "payment",
@@ -62,7 +64,9 @@ export const createCheckoutSession = async (req, res, next) => {
 			metadata: {
 				userId: req.user._id.toString(),
 				couponCode: couponCode || "",
-				cartSummary: `items:${products.length},total:${totalAmount/100}`
+        cartSummary: `items:${products.length},total:${totalAmount/100}`,
+        products: JSON.stringify(products.map(p => ({ id: p._id || p.id, quantity: p.quantity || 1, price: p.price }))),
+        locale
 			},
 		});
 
@@ -70,9 +74,9 @@ export const createCheckoutSession = async (req, res, next) => {
 			await createNewCoupon(req.user._id);
 		}
 		
-		res.status(200).json({ 
+        res.status(200).json({ 
 			success: true,
-			message: "Checkout session created successfully",
+            message: "Checkout session created successfully",
 			data: {
 				id: session.id, 
 				url: session.url,
@@ -407,16 +411,20 @@ export const createPaymentIntent = async (req, res, next) => {
 		}
 
 		// Create payment intent
-		const paymentIntent = await stripe.paymentIntents.create({
+    const locale = (req.headers['accept-language'] || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+
+    const paymentIntent = await stripe.paymentIntents.create({
 			amount: totalAmount,
-			currency: "usd",
+            currency: "sar",
 			automatic_payment_methods: {
 				enabled: true,
 			},
 			metadata: {
 				userId: req.user._id.toString(),
 				couponCode: couponCode || "",
-				cartSummary: `items:${products.length},total:${totalAmount/100}`
+        cartSummary: `items:${products.length},total:${totalAmount/100}`,
+        products: JSON.stringify(products.map(p => ({ productId: p._id || p.id, quantity: p.quantity || 1, price: p.price }))),
+        locale
 			},
 		});
 
