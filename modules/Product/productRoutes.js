@@ -8,18 +8,12 @@ import {
 } from "./productValidations.js";
 import { validation } from "../../middlewares/validation.js";
 import { protect, adminRoute } from "../../middlewares/auth.js";
-import { uploaders, handleMulterError } from "../../utils/multer.js";
+import { uploaders, handleMulterError, uploadToCloudinary } from "../../utils/multer.js";
 
 const router = Router();
 
-// Get all products
+// Get all products (with search functionality)
 router.get('/getProducts', 
-   validation({ query: productQueryValidator }), 
-   productController.getAllProducts
-);
-
-// Search products
-router.get('/search', 
    validation({ query: productQueryValidator }), 
    productController.getAllProducts
 );
@@ -51,12 +45,13 @@ router.get('/getProductsByCategory/:category',
    productController.getProductsByCategory
 );
 
-// Create product with single image upload (Admin only)
+// Create product with multiple images upload (Admin only)
 router.post('/createProduct', 
    protect,
    adminRoute,
-   uploaders.productImage.single('image'),
+   uploaders.productImages.array('images', 10),
    handleMulterError,
+   uploadToCloudinary('products'),
    validation({ body: createProductValidator }), 
    productController.createProduct
 );
@@ -67,6 +62,7 @@ router.post('/createProductWithImages',
    adminRoute,
    uploaders.productImages.array('images', 10),
    handleMulterError,
+   uploadToCloudinary('products'),
    validation({ body: createProductValidator }), 
    productController.createProductWithImages
 );
@@ -78,6 +74,7 @@ router.post('/uploadProductImage/:id',
    validation({ params: productIdValidator }),
    uploaders.productImage.single('image'),
    handleMulterError,
+   uploadToCloudinary('products'),
    productController.uploadProductImage
 );
 
@@ -88,6 +85,7 @@ router.post('/uploadProductImages/:id',
    validation({ params: productIdValidator }),
    uploaders.productImages.array('images', 10),
    handleMulterError,
+   uploadToCloudinary('products'),
    productController.uploadProductImages
 );
 
@@ -112,8 +110,9 @@ router.put('/updateProduct/:id',
    protect,
    adminRoute,
    validation({ params: productIdValidator }),
-   uploaders.productImage.single('image'),
+   uploaders.productImages.array('images', 10),
    handleMulterError,
+   uploadToCloudinary('products'),
    productController.updateProduct
 );
 

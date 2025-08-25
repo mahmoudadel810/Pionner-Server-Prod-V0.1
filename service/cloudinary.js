@@ -14,7 +14,7 @@ export const initCloudinary = () => {
 
 //==================================uploadImage================================================
 
-export const uploadImage = async (filePath, folder = 'theshop', options = {}) => {
+export const uploadImage = async (filePath, folder = 'Pionner', options = {}) => {
     try {
         const defaultOptions = {
             folder,
@@ -40,7 +40,7 @@ export const uploadImage = async (filePath, folder = 'theshop', options = {}) =>
 };
 //==================================uploadMultipleImages================================================
 
-export const uploadMultipleImages = async (files, folder = 'theshop/products') => {
+export const uploadMultipleImages = async (files, folder = 'Pionner/products') => {
     try {
         const uploadPromises = files.map((file, index) =>
             uploadImage(file.tempFilePath, folder, {
@@ -113,4 +113,4 @@ export const getImageInfo = async (publicId) => {
 };
 
 
-export default cloudinary; 
+export default cloudinary;   

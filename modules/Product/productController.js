@@ -3,7 +3,7 @@ import categoryModel from "../../DB/models/categoryModel.js";
 import { redis } from "../../utils/redis.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import { paginationHelper, buildSearchQuery, buildPaginationResponse } from "../../utils/pagination.js";
-import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "../../utils/multer.js";
+import { deleteFromCloudinary, deleteMultipleFromCloudinary, uploadToCloudinary } from "../../utils/multer.js";
 import logger from "../../utils/logger.js";
 
 //==================================Get All Products======================================
@@ -167,8 +167,11 @@ export const getFeaturedProducts = async (req, res, next) => {
 
 export const createProduct = async (req, res, next) => {
 	try {
-		const { name, description, price, category, image } = req.body;
-
+		const { name, description, price, image, category, stockQuantity } = req.body;
+		console.log("================Body of the product added=========>", req.body);
+		console.log("================Uploaded Files=========>", req.uploadedFiles);
+		console.log("================Uploaded File=========>", req.uploadedFile);
+		
 		// Find category by name
 		const categoryDoc = await categoryModel.findOne({ name: category });
 		if (!categoryDoc) {
@@ -177,24 +180,45 @@ export const createProduct = async (req, res, next) => {
 				message: `Category '${category}' not found`
 			});
 		}
-
-		// Handle file upload from multer or use provided image URL
-		let imageUrl = "";
-		if (req.file) {
-			imageUrl = req.file.path; // Cloudinary URL from multer-storage-cloudinary
+		
+		// Handle multiple images from uploadToCloudinary middleware or single image
+		let images = [];
+		let mainImage = "";
+		
+		// Check for uploaded files from Cloudinary middleware
+		if (req.uploadedFiles && req.uploadedFiles.length > 0) {
+			// Multiple images uploaded
+			images = req.uploadedFiles.map(file => file.url);
+			mainImage = images[0];
+			console.log("=== Multiple images processed ===", { count: images.length, mainImage });
+		} else if (req.uploadedFile) {
+			// Single image uploaded
+			mainImage = req.uploadedFile.url;
+			images = [mainImage];
+			console.log("=== Single image processed ===", { mainImage });
 		} else if (image) {
-			imageUrl = image; // Use provided image URL
+			// Image URL provided in body
+			mainImage = image;
+			images = [image];
+			console.log("=== Image URL provided ===", { mainImage });
+		} else {
+			console.log("=== No images found ===");
+			return res.status(400).json({
+				success: false,
+				message: "At least one image is required"
+			});
 		}
 
 		const product = await productModel.create({
 			name,
 			description,
 			price,
-			image: imageUrl,
+			image: mainImage,
+			images: images,
 			category,
 			categoryId: categoryDoc._id,
-			stockQuantity: 50, // Default stock quantity
-			isFeatured: false // Default featured status
+			stockQuantity,
+			isFeatured: false
 		});
 
 		// Update category product count
@@ -217,18 +241,42 @@ export const createProduct = async (req, res, next) => {
 
 export const createProductWithImages = async (req, res, next) => {
 	try {
-		const { name, description, price, category } = req.body;
+		const { name, description, price, category, stockQuantity } = req.body;
 
-		// Handle multiple file uploads from multer
-		const images = req.files ? req.files.map(file => file.path) : [];
+		// Find category by name
+		const categoryDoc = await categoryModel.findOne({ name: category });
+		if (!categoryDoc) {
+			return res.status(404).json({
+				success: false,
+				message: `Category '${category}' not found`
+			});
+		}
+
+		// Handle multiple images from uploadToCloudinary middleware
+		let images = [];
+		let mainImage = "";
+		
+		if (req.uploadedFiles && req.uploadedFiles.length > 0) {
+			images = req.uploadedFiles.map(file => file.url);
+			mainImage = images[0];
+		}
 
 		const product = await productModel.create({
 			name,
 			description,
 			price,
-			images: images, // Assuming your model has an images array field
-			image: images[0] || "", // Keep the first image as main image for backward compatibility
+			images: images,
+			image: mainImage,
 			category,
+			categoryId: categoryDoc._id,
+			stockQuantity,
+			isFeatured: false
+		});
+
+		// Update category product count
+		await categoryModel.findByIdAndUpdate(categoryDoc._id, {
+			$inc: { productCount: 1 },
+			$push: { products: product._id }
 		});
 
 		res.status(201).json({
@@ -255,7 +303,7 @@ export const uploadProductImage = async (req, res, next) => {
 			});
 		}
 
-		if (!req.file) {
+		if (!req.uploadedFile) {
 			return res.status(400).json({ 
 				success: false,
 				message: "No image file provided" 
@@ -271,8 +319,8 @@ export const uploadProductImage = async (req, res, next) => {
 			}
 		}
 
-		// Update product with new image
-		product.image = req.file.path;
+		// Update product with new image from Cloudinary
+		product.image = req.uploadedFile.url;
 		await product.save();
 
 		res.json({
@@ -302,15 +350,15 @@ export const uploadProductImages = async (req, res, next) => {
 			});
 		}
 
-		if (!req.files || req.files.length === 0) {
+		if (!req.uploadedFiles || req.uploadedFiles.length === 0) {
 			return res.status(400).json({ 
 				success: false,
 				message: "No image files provided" 
 			});
 		}
 
-		// Get new image URLs
-		const newImages = req.files.map(file => file.path);
+		// Get new image URLs from Cloudinary
+		const newImages = req.uploadedFiles.map(file => file.url);
 
 		// Delete old images from Cloudinary if they exist
 		if (product.images && product.images.length > 0) {
@@ -506,9 +554,26 @@ export const updateProduct = async (req, res, next) => {
 		const { id } = req.params;
 		const updateData = req.body;
 
-		// Handle file upload from multer or use provided image URL
-		if (req.file) {
-			updateData.image = req.file.path; // Cloudinary URL from multer-storage-cloudinary
+		// Handle multiple images from uploadToCloudinary middleware
+		if (req.uploadedFiles && req.uploadedFiles.length > 0) {
+			const newImages = req.uploadedFiles.map(file => file.url);
+			updateData.images = newImages;
+			updateData.image = newImages[0]; // Set first image as main image
+			
+			// Delete old images from Cloudinary
+			const existingProduct = await productModel.findById(id);
+			if (existingProduct && existingProduct.images && existingProduct.images.length > 0) {
+				for (const oldImage of existingProduct.images) {
+					try {
+						await deleteFromCloudinary(oldImage);
+					} catch (error) {
+						logger.error("Error deleting old image:", error);
+					}
+				}
+			}
+		} else if (req.uploadedFile) {
+			updateData.image = req.uploadedFile.url;
+			updateData.images = [req.uploadedFile.url];
 		}
 
 		const product = await productModel.findByIdAndUpdate(

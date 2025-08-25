@@ -385,7 +385,7 @@ export const forgotPassword = async (req, res, next) => {
 				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 					<div style="text-align: center; margin-bottom: 30px;">
 						<h1 style="color: #333; margin-bottom: 10px;">Password Reset Request</h1>
-						<p style="color: #666; font-size: 16px;">Secure your TheShop account</p>
+						<p style="color: #666; font-size: 16px;">Secure your Pionner account</p>
 					</div>
 					
 					<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
@@ -394,7 +394,7 @@ export const forgotPassword = async (req, res, next) => {
 							Hi there,
 						</p>
 						<p style="color: #555; line-height: 1.6; margin-bottom: 20px;">
-							We received a request to reset your password for your TheShop account. 
+							We received a request to reset your password for your Pionner account. 
 							To complete the password reset process, please use the verification code below:
 						</p>
 						
@@ -415,12 +415,12 @@ export const forgotPassword = async (req, res, next) => {
 					
 					<div style="text-align: center; color: #666; font-size: 14px;">
 						<p>For security reasons, never share this code with anyone.</p>
-						<p>The TheShop team will never ask for this code via phone or message.</p>
+						<p>The Pionner team will never ask for this code via phone or message.</p>
 					</div>
 					
 					<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
 						<p style="color: #999; font-size: 12px;">
-							© 2024 TheShop. All rights reserved.
+							© 2024 Pionner. All rights reserved.
 						</p>
 					</div>
 				</div>
@@ -515,7 +515,7 @@ export const resetPassword = async (req, res, next) => {
 							Hi there,
 						</p>
 						<p style="color: #555; line-height: 1.6; margin-bottom: 20px;">
-							This email confirms that your password for your TheShop account has been successfully changed.
+							This email confirms that your password for your Pionner account has been successfully changed.
 						</p>
 						
 						<div style="text-align: center; margin: 30px 0;">
@@ -533,12 +533,12 @@ export const resetPassword = async (req, res, next) => {
 					
 					<div style="text-align: center; color: #666; font-size: 14px;">
 						<p>For security reasons, please ensure your account has a secure password.</p>
-						<p>The TheShop team will never ask for your password via phone or message.</p>
+						<p>The Pionner team will never ask for your password via phone or message.</p>
 					</div>
 					
 					<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
 						<p style="color: #999; font-size: 12px;">
-							© 2024 TheShop. All rights reserved.
+							© 2024 Pionner. All rights reserved.
 						</p>
 					</div>
 				</div>

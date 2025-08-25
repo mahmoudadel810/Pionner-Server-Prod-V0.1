@@ -6,7 +6,8 @@ export const createProductValidator = Joi.object({
    name: Joi.string().required().min(2).max(100).trim(),
    description: Joi.string().required().min(10).max(1000).trim(),
    price: Joi.number().required().min(0),
-   image: Joi.string().optional().allow(''),
+   stockQuantity: Joi.number().required().min(0),
+   image: Joi.string().optional().allow('').trim(), // Optional since images will be uploaded via files
    category: Joi.string().required().min(2).max(50).trim()
 });
 

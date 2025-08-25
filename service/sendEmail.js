@@ -23,7 +23,7 @@ const sendEmail = async ({
 
         // Send email
         const info = await transporter.sendMail({
-            from: `"TheShop" <${process.env.EMAIL_SMTP_USER}>`,
+            from: `"Pionner" <${process.env.EMAIL_SMTP_USER}>`,
             to,
             subject,
             html: message,

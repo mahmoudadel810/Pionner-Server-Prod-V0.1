@@ -1,5 +1,6 @@
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
+import { uploadImage } from '../service/cloudinary.js';
 import logger from './logger.js';
 
 // Custom error class for file upload errors
@@ -7,23 +8,11 @@ class FileUploadError extends Error {
     constructor(message, statusCode = 400) {
         super(message);
         this.statusCode = statusCode;
-        this.name = 'FileUploadError';
+        this.name = 'FileUploadError'; 
     }
 }
 
-// Cloudinary upload function
-const uploadImage = async (dataURI, folder, options = {}) => {
-    try {
-        const result = await cloudinary.uploader.upload(dataURI, {
-            folder: folder,
-            ...options
-        });
-        return result;
-    } catch (error) {
-        logger.error('Cloudinary upload error:', error);
-        throw new FileUploadError('Failed to upload image', 500);
-    }
-};
+// Using imported uploadImage from cloudinary service
 
 // Cloudinary delete function
 const deleteImage = async (publicId) => {
