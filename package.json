@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "build": "pnpm install --prod",
+    "build": "npm install --prod",
     "dev": "nodemon index.js"
   },
   "keywords": [
