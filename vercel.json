@@ -4,7 +4,7 @@
   "buildCommand": "npm run build",
   "functions": {
     "index.js": {
-      "runtime": "nodejs18.x"
+      "runtime": "nodejs20.x"
     }
   },
   "routes": [
