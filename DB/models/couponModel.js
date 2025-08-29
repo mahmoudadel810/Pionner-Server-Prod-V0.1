@@ -9,11 +9,11 @@ const couponSchema = new mongoose.Schema(
 		},
 		discountPercentage: {
 			type: Number,
-			required: true,
+			// required: true,
 			min: 0,
 			max: 100,
 		},
-		expirationDate: {
+		expiryDate: {
 			type: Date,
 			required: true,
 		},
@@ -25,7 +25,7 @@ const couponSchema = new mongoose.Schema(
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
 			required: true,
-			unique: true,
+			unique: false,
 		},
 	},
 	{

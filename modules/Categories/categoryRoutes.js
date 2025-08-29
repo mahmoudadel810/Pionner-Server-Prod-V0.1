@@ -18,13 +18,13 @@ router.get("/featured", categoryController.getFeaturedCategories);
 router.get("/:id", categoryController.getCategoryById);
 
 // Get category by slug
-router.get("/slug/:slug", categoryController.getCategoryBySlug);
+// router.get("/slug/:slug", categoryController.getCategoryBySlug);
 
 // Get products by category ID
 router.get("/:id/products", categoryController.getProductsByCategory);
 
 // Get products by category slug
-router.get("/slug/:slug/products", categoryController.getProductsByCategorySlug);
+// router.get("/slug/:slug/products", categoryController.getProductsByCategorySlug);
 
 //==================================Admin Routes (Protected)======================================
 
@@ -36,6 +36,7 @@ router.post(
 	uploadSingleFile("image", "categories"),
 	validation({
 		name: { type: "string", min: 2, max: 50, required: true },
+		// slug: { type: "string", required: false },
 		description: { type: "string", min: 10, max: 500, required: true },
 		featured: { type: "boolean", required: false },
 		order: { type: "number", min: 0, required: false }

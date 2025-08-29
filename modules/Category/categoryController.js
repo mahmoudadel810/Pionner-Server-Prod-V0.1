@@ -23,6 +23,7 @@ export const createCategory = async (req, res, next) => {
 			image: imageUrl,
 			featured,
 			order
+			
 		});
 
 		// Clear cache
