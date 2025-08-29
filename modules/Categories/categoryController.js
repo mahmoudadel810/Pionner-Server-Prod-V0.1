@@ -209,31 +209,31 @@ export const getCategoryById = async (req, res, next) => {
 
 //==================================Get Category By Slug======================================
 
-export const getCategoryBySlug = async (req, res, next) => {
-	try {
-		const { slug } = req.params;
+// export const getCategoryBySlug = async (req, res, next) => {
+// 	try {
+// 		const { slug } = req.params;
 
-		const category = await categoryModel.findOne({ 
-			slug, 
-			isActive: true 
-		}).lean();
+// 		const category = await categoryModel.findOne({ 
+// 			slug, 
+// 			isActive: true 
+// 		}).lean();
 
-		if (!category) {
-			return res.status(404).json({ 
-				success: false,
-				message: "Category not found" 
-			});
-		}
+// 		if (!category) {
+// 			return res.status(404).json({ 
+// 				success: false,
+// 				message: "Category not found" 
+// 			});
+// 		}
 
-		res.json({
-			success: true,
-			message: "Category retrieved successfully",
-			data: category
-		});
-	} catch (error) {
-		errorHandler(error, req, res, next);
-	}
-};
+// 		res.json({
+// 			success: true,
+// 			message: "Category retrieved successfully",
+// 			data: category
+// 		});
+// 	} catch (error) {
+// 		errorHandler(error, req, res, next);
+// 	}
+// };
 
 //==================================Update Category======================================
 

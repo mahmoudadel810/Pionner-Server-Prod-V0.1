@@ -18,8 +18,8 @@ export const createContact = async (req, res, next) => {
       const emailContent = `
          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; border-radius: 8px; padding: 32px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
             <div style="text-align: center; margin-bottom: 24px;">
-               <img src="https://theshop.com/assets/logo.png" alt="TheShop Logo" style="height: 48px; margin-bottom: 8px;">
-               <h2 style="color: #222; margin: 0;">Thank you for contacting TheShop</h2>
+               <img src="https://Pinner.com/assets/logo.png" alt="Pionner Logo" style="height: 48px; margin-bottom: 8px;">
+               <h2 style="color: #222; margin: 0;">Thank you for contacting Pionner</h2>
             </div>
             <p style="font-size: 16px; color: #333;">Dear <strong>${name}</strong>,</p>
             <p style="font-size: 15px; color: #444; margin-bottom: 24px;">
@@ -33,14 +33,14 @@ export const createContact = async (req, res, next) => {
             <p style="font-size: 14px; color: #888;">If you have any additional information to share, simply reply to this email.</p>
             <p style="font-size: 15px; color: #333; margin-top: 32px;">
                Kind regards,<br>
-               <span style="color: #1976d2; font-weight: bold;">TheShop Support Team</span>
+               <span style="color: #1976d2; font-weight: bold;">Pionner Support Team</span>
             </p>
          </div>
       `;
 
       await sendEmail({
          to: email,
-         subject: "Thank you for contacting us - TheShop",
+         subject: "Thank you for contacting us - Pionner",
          message: emailContent
       });
 

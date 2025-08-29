@@ -1,6 +1,6 @@
 import couponModel from "../../DB/models/couponModel.js";
 import { errorHandler } from "../../utils/errorHandler.js";
-
+import userModel from "../../DB/models/userModel.js";
 //==================================Get Coupon======================================
 
 export const getCoupon = async (req, res, next) => {
@@ -107,9 +107,11 @@ export const createCoupon = async (req, res, next) => {
 			discountValue, 
 			minimumAmount, 
 			maximumUsage, 
-			expiryDate 
+			expiryDate ,
+			valiedEmail
 		} = req.body;
-
+		console.log(req.body);
+		// const {_id} =req.user
 		// Check if coupon code already exists
 		const existingCoupon = await couponModel.findOne({ code });
 		if (existingCoupon) {
@@ -119,6 +121,21 @@ export const createCoupon = async (req, res, next) => {
 			});
 		}
 
+		// ==== get userId==>
+			const isUserFound =await userModel.findOne({email:valiedEmail})
+		console.log(isUserFound._id.toString());
+		
+		if(!isUserFound){
+			return res.status(404).json({
+			success: false,
+			message: "user not found",
+			
+		});
+		}
+		
+		
+		
+
 		const coupon = await couponModel.create({
 			code,
 			description,
@@ -127,8 +144,12 @@ export const createCoupon = async (req, res, next) => {
 			minimumAmount,
 			maxUsage: maximumUsage,
 			expiryDate: new Date(expiryDate),
-			isActive: true
+			isActive: true,
+			userId:isUserFound._id
+			
 		});
+		console.log(coupon);
+		
 
 		res.status(201).json({
 			success: true,
