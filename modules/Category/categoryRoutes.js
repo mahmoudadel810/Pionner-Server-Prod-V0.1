@@ -13,7 +13,7 @@ import {
 } from "./categoryController.js";
 import { protect, authorize } from "../../middlewares/auth.js";
 import { validation } from "../../middlewares/validation.js";
-import { uploaders, handleMulterError } from "../../utils/multer.js";
+import { uploaders, handleMulterError, uploadToCloudinary } from "../../utils/multer.js";
 
 const router = express.Router();
 
@@ -46,6 +46,7 @@ router.post(
 	authorize("admin"),
 	uploaders.categoryImage.single("image"),
 	handleMulterError,
+	uploadToCloudinary("categories"),
 	validation({
 		name: { type: "string", min: 2, max: 50, required: true },
 		description: { type: "string", min: 10, max: 500, required: true },
@@ -62,6 +63,7 @@ router.put(
 	authorize("admin"),
 	uploaders.categoryImage.single("image"),
 	handleMulterError,
+	uploadToCloudinary("categories"),
 	validation({
 		name: { type: "string", min: 2, max: 50, required: false },
 		description: { type: "string", min: 10, max: 500, required: false },

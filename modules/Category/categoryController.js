@@ -13,8 +13,8 @@ export const createCategory = async (req, res, next) => {
 
 		// Handle file upload from multer
 		let imageUrl = "";
-		if (req.file) {
-			imageUrl = req.file.path; // Cloudinary URL from multer-storage-cloudinary
+		if (req.uploadedFile) {
+			imageUrl = req.uploadedFile.url; // Cloudinary URL from uploadToCloudinary middleware
 		}
 
 		const category = await categoryModel.create({
@@ -251,16 +251,16 @@ export const updateCategory = async (req, res, next) => {
 		}
 
 		// Handle file upload from multer
-		if (req.file) {
+		if (req.uploadedFile) {
 			// Delete old image from Cloudinary if exists
 			if (category.image) {
 				try {
 					await deleteFromCloudinary(category.image);
 				} catch (error) {
-			logger.error("Error deleting old image:", error);
+					logger.error("Error deleting old image:", error);
 				}
 			}
-			category.image = req.file.path;
+			category.image = req.uploadedFile.url;
 		}
 
 		// Update fields
