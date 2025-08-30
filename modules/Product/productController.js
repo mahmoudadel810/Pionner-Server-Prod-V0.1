@@ -554,6 +554,18 @@ export const updateProduct = async (req, res, next) => {
 		const { id } = req.params;
 		const updateData = req.body;
 
+		// Handle category conversion from name to categoryId
+		if (updateData.category && typeof updateData.category === 'string') {
+			const categoryDoc = await categoryModel.findOne({ name: updateData.category });
+			if (!categoryDoc) {
+				return res.status(404).json({
+					success: false,
+					message: `Category '${updateData.category}' not found`
+				});
+			}
+			updateData.categoryId = categoryDoc._id;
+		}
+
 		// Handle multiple images from uploadToCloudinary middleware
 		if (req.uploadedFiles && req.uploadedFiles.length > 0) {
 			const newImages = req.uploadedFiles.map(file => file.url);
@@ -671,4 +683,4 @@ export const updateProductPrice = async (req, res, next) => {
 	} catch (error) {
 		errorHandler(error, req, res, next);
 	}
-}; 
+};
