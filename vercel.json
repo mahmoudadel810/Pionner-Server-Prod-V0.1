@@ -5,8 +5,6 @@
       "runtime": "nodejs22.x"
     }
   },
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
   "routes": [
     {
       "src": "/api/(.*)",
