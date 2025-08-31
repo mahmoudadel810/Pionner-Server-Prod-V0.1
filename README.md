@@ -16,7 +16,7 @@ A robust, scalable Node.js + Express backend API for e-commerce applications, op
 
 ## 🛠️ Tech Stack
 
-- **Runtime**: Node.js 22+
+- **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose
 - **Caching**: Redis (optional)
@@ -94,7 +94,7 @@ CLIENT_URL=https://your-frontend-domain.com
 ### 3. Build Configuration
 - **Build Command**: `pnpm build`
 - **Start Command**: `pnpm start`
-- **Node Version**: 22.x
+- **Node Version**: 18.x
 
 ### 4. Auto-Deploy
 - Enable auto-deploy from your main branch
