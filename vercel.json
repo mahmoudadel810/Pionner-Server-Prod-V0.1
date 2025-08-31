@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "index.js": {
-      "runtime": "nodejs22.x"
+      "runtime": "@vercel/node@22.x"
     }
   },
   "routes": [
