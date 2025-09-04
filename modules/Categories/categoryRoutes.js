@@ -18,13 +18,13 @@ router.get("/featured", categoryController.getFeaturedCategories);
 router.get("/:id", categoryController.getCategoryById);
 
 // Get category by slug
-// router.get("/slug/:slug", categoryController.getCategoryBySlug);
+router.get("/slug/:slug", categoryController.getCategoryBySlug);
 
 // Get products by category ID
 router.get("/:id/products", categoryController.getProductsByCategory);
 
 // Get products by category slug
-// router.get("/slug/:slug/products", categoryController.getProductsByCategorySlug);
+router.get("/slug/:slug/products", categoryController.getProductsByCategorySlug);
 
 //==================================Admin Routes (Protected)======================================
 
