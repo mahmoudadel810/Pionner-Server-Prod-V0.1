@@ -21,12 +21,7 @@ const categorySchema = new mongoose.Schema(
 			type: String,
 			// required: [true, "Category image is required"]
 		},
-		slug: {
-			type: String,
-			lowercase: true,
-			trim: true,
-			unique:false
-		},
+
 		isActive: {
 			type: Boolean,
 			default: true
@@ -66,13 +61,7 @@ const categorySchema = new mongoose.Schema(
 // 	foreignField: 'categoryId'
 // });
 
-// Pre-save middleware to generate slug
-// categorySchema.pre('save', function(next) {
-// 	if (this.isModified('name')) {
-// 		this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-// 	}
-// 	next();
-// });
+
 
 // Static method to get categories with product count
 categorySchema.statics.getCategoriesWithProductCount = async function() {
