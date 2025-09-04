@@ -52,11 +52,8 @@ export const getAllCategories = async (req, res, next) => {
 		if (redis && !search && !featured) {
 			const cachedCategories = await redis.get("categories");
 			if (cachedCategories) {
-				return res.json({
-					success: true,
-					message: "Categories retrieved from cache",
-					data: JSON.parse(cachedCategories)
-				});
+				// Return the original response shape directly from cache
+				return res.json(JSON.parse(cachedCategories));
 			}
 		}
 
