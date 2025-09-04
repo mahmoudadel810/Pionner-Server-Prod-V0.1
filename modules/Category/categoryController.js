@@ -209,31 +209,7 @@ export const getCategoryById = async (req, res, next) => {
 
 //==================================Get Category By Slug======================================
 
-export const getCategoryBySlug = async (req, res, next) => {
-	try {
-		const { slug } = req.params;
-
-		const category = await categoryModel.findOne({ 
-			slug, 
-			isActive: true 
-		}).lean();
-
-		if (!category) {
-			return res.status(404).json({ 
-				success: false,
-				message: "Category not found" 
-			});
-		}
-
-		res.json({
-			success: true,
-			message: "Category retrieved successfully",
-			data: category
-		});
-	} catch (error) {
-		errorHandler(error, req, res, next);
-	}
-};
+// Removed getCategoryBySlug function as slug field no longer exists in category model
 
 //==================================Update Category======================================
 
@@ -414,7 +390,7 @@ export const getProductsByCategory = async (req, res, next) => {
 			.sort(sortObject)
 			.skip(pagination.skip)
 			.limit(pagination.limit)
-			.populate('categoryId', 'name slug')
+			.populate('categoryId', 'name')
 			.lean();
 
 		const response = buildPaginationResponse({
@@ -434,60 +410,4 @@ export const getProductsByCategory = async (req, res, next) => {
 
 //==================================Get Products By Category Slug======================================
 
-export const getProductsByCategorySlug = async (req, res, next) => {
-	try {
-		const { slug } = req.params;
-		const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
-
-		// Verify category exists and is active
-		const category = await categoryModel.findOne({ 
-			slug, 
-			isActive: true 
-		}).lean();
-
-		if (!category) {
-			return res.status(404).json({ 
-				success: false,
-				message: "Category not found or inactive" 
-			});
-		}
-
-		// Build search query
-		const searchQuery = { categoryId: category._id };
-
-		// Get total count
-		const totalCount = await productModel.countDocuments(searchQuery);
-
-		// Build pagination
-		const pagination = paginationHelper({
-			page,
-			limit,
-			totalCount
-		});
-
-		// Build sort object
-		const sortObject = {};
-		sortObject[sortBy] = sortOrder === 'desc' ? -1 : 1;
-
-		// Get products with pagination
-		const products = await productModel.find(searchQuery)
-			.sort(sortObject)
-			.skip(pagination.skip)
-			.limit(pagination.limit)
-			.populate('categoryId', 'name slug')
-			.lean();
-
-		const response = buildPaginationResponse({
-			data: products,
-			pagination,
-			message: `${totalCount} products found in ${category.name} category`
-		});
-
-		// Add category info to response
-		response.category = category;
-
-		res.json(response);
-	} catch (error) {
-		errorHandler(error, req, res, next);
-	}
-};
+// Removed getProductsByCategorySlug function as slug field no longer exists in category model

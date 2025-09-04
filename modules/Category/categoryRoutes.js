@@ -4,12 +4,10 @@ import {
 	getAllCategories,
 	getFeaturedCategories,
 	getCategoryById,
-	getCategoryBySlug,
 	updateCategory,
 	deleteCategory,
 	toggleCategoryStatus,
-	getProductsByCategory,
-	getProductsByCategorySlug
+	getProductsByCategory
 } from "./categoryController.js";
 import { protect, authorize } from "../../middlewares/auth.js";
 import { validation } from "../../middlewares/validation.js";
@@ -28,14 +26,8 @@ router.get("/featured", getFeaturedCategories);
 // Get category by ID
 router.get("/:id", getCategoryById);
 
-// Get category by slug
-router.get("/slug/:slug", getCategoryBySlug);
-
 // Get products by category ID
 router.get("/:id/products", getProductsByCategory);
-
-// Get products by category slug
-router.get("/slug/:slug/products", getProductsByCategorySlug);
 
 //==================================Admin Routes (Protected)======================================
 
