@@ -21,6 +21,12 @@ const categorySchema = new mongoose.Schema(
 			type: String,
 			// required: [true, "Category image is required"]
 		},
+		slug: {
+			type: String,
+			trim: true,
+			lowercase: true,
+			unique: true
+		},
 
 		isActive: {
 			type: Boolean,
@@ -53,6 +59,34 @@ const categorySchema = new mongoose.Schema(
 		toObject: { virtuals: true }
 	}
 );
+
+// Generate a unique, URL-friendly slug from the category name
+categorySchema.pre('save', async function(next) {
+	try {
+		if ((this.isModified('name') || !this.slug) && this.name) {
+			const baseSlug = this.name
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/(^-|-$)/g, '');
+
+			let uniqueSlug = baseSlug;
+			let counter = 1;
+
+			// Ensure uniqueness by appending a counter if needed
+			while (await this.constructor.findOne({ slug: uniqueSlug, _id: { $ne: this._id } })) {
+				uniqueSlug = `${baseSlug}-${counter++}`;
+			}
+
+			this.slug = uniqueSlug;
+		}
+		return next();
+	} catch (err) {
+		return next(err);
+	}
+});
+
+// Index for faster lookups and uniqueness at the database level
+categorySchema.index({ slug: 1 }, { unique: true, sparse: true });
 
 // Virtual for products relationship (commented out since we now have a real products array)
 // categorySchema.virtual('products', {
