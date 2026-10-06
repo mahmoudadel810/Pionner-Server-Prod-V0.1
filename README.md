@@ -1,223 +1,96 @@
-# TheShop Backend API - Production Ready
+# Pionner Server
 
-A robust, scalable Node.js + Express backend API for e-commerce applications, optimized for production deployment on Render.
+REST API for the Pionner online store: accounts, catalog, cart, wishlist, coupons, orders and Stripe payments.
+The React client lives in a separate repository.
 
-## 🚀 Production Features
+## Features
 
-- **Security Hardened**: Helmet, CORS, rate limiting, input validation
-- **Performance Optimized**: Compression, caching, efficient database queries
-- **Production Logging**: Winston logger with structured logging
-- **Error Handling**: Comprehensive error handling with no sensitive data leakage
-- **Database Optimization**: Connection pooling, proper indexing
-- **File Upload**: Secure Cloudinary integration
-- **Payment Processing**: Stripe integration with webhook handling
-- **Email Services**: Nodemailer integration
-- **Caching**: Redis integration for improved performance
+- Sign up with email confirmation, login with JWT access/refresh tokens (cookies or `Authorization` header)
+- Password reset by emailed code, profile and profile-image updates
+- Categories and products with search, pagination, featured items and Cloudinary image uploads
+- Cart, wishlist and per-user coupons
+- Orders with stock checks, status updates and admin analytics (sales, categories, top products)
+- Stripe Checkout and Payment Intents, with a webhook for completed sessions
+- Contact form stored in MongoDB with admin endpoints
+- Role-based admin routes, rate limiting, Helmet and a CORS allow-list
+- Optional Redis cache for featured products and categories
 
-## 🛠️ Tech Stack
+## Stack
 
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose
-- **Caching**: Redis (optional)
-- **File Storage**: Cloudinary
-- **Payment**: Stripe
-- **Email**: Nodemailer
-- **Authentication**: JWT with refresh tokens
-- **Logging**: Winston
-- **Security**: Helmet, CORS, Rate Limiting
+Node.js 22, Express 4, MongoDB with Mongoose 8, Joi, JSON Web Tokens, Stripe, Cloudinary, Nodemailer, ioredis, Winston.
 
-## 📋 Prerequisites
+## Requirements
 
-- Node.js 18+ 
-- MongoDB database
-- Redis (optional, for caching)
-- Cloudinary account
-- Stripe account
-- Email service (Gmail, SendGrid, etc.)
+- Node.js 22
+- A MongoDB database (local or Atlas)
+- Optional: SMTP account, Cloudinary account, Stripe account, Redis
 
-## 🔧 Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd theshop-backend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Environment Configuration**
-   ```bash
-   cp config/production.env.example config/.env
-   # Edit config/.env with your production values
-   ```
-
-4. **Start the server**
-   ```bash
-   # Development
-   pnpm dev
-   
-   # Production
-   pnpm start
-   ```
-
-## 🌐 Deployment on Render
-
-### 1. Connect Your Repository
-- Connect your GitHub repository to Render
-- Select "Web Service" as the service type
-
-### 2. Configure Environment Variables
-Add these environment variables in Render dashboard:
-
-```env
-NODE_ENV=production
-PORT=3000
-MONGO_URI=your-mongodb-connection-string
-ACCESS_TOKEN_SECRET=your-jwt-secret
-REFRESH_TOKEN_SECRET=your-refresh-token-secret
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-STRIPE_SECRET_KEY=your-stripe-secret
-STRIPE_WEBHOOK_SECRET=your-webhook-secret
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email
-EMAIL_PASS=your-app-password
-CLIENT_URL=https://your-frontend-domain.com
-```
-
-### 3. Build Configuration
-- **Build Command**: `pnpm build`
-- **Start Command**: `pnpm start`
-- **Node Version**: 18.x
-
-### 4. Auto-Deploy
-- Enable auto-deploy from your main branch
-- Render will automatically deploy on every push
-
-## 📚 API Documentation
-
-### Base URL
-```
-https://your-app-name.onrender.com/api/v1
-```
-
-### Authentication Endpoints
-- `POST /auth/signup` - User registration
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `GET /auth/profile` - Get user profile
-- `PUT /auth/profile` - Update user profile
-
-### Product Endpoints
-- `GET /products` - Get all products (with pagination)
-- `GET /products/:id` - Get single product
-- `POST /products` - Create product (admin only)
-- `PUT /products/:id` - Update product (admin only)
-- `DELETE /products/:id` - Delete product (admin only)
-
-### Category Endpoints
-- `GET /categories` - Get all categories
-- `GET /categories/:id` - Get single category
-- `POST /categories` - Create category (admin only)
-- `PUT /categories/:id` - Update category (admin only)
-- `DELETE /categories/:id` - Delete category (admin only)
-
-### Order Endpoints
-- `GET /orders` - Get user orders
-- `POST /orders` - Create order
-- `GET /orders/:id` - Get single order
-- `PUT /orders/:id` - Update order status (admin only)
-
-### Payment Endpoints
-- `POST /payments/create-checkout-session` - Create Stripe checkout session
-- `POST /payments/webhook` - Stripe webhook handler
-- `GET /payments/status/:sessionId` - Get payment status
-
-## 🔒 Security Features
-
-- **Rate Limiting**: Prevents abuse with configurable limits
-- **Input Validation**: All inputs validated and sanitized
-- **CORS Protection**: Configured for production domains
-- **Helmet Security**: HTTP headers security
-- **JWT Authentication**: Secure token-based authentication
-- **Password Hashing**: bcrypt for password security
-- **Error Handling**: No sensitive data in error responses
-
-## 📊 Monitoring & Logging
-
-- **Structured Logging**: Winston logger with different levels
-- **Error Tracking**: Comprehensive error logging
-- **Performance Monitoring**: Request/response logging
-- **Health Checks**: `/api/v1/health` endpoint for monitoring
-
-## 🚨 Error Handling
-
-The API returns consistent error responses:
-
-```json
-{
-  "success": false,
-  "error": "Error message",
-  "stack": "Stack trace (development only)"
-}
-```
-
-## 🔧 Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NODE_ENV` | Environment (production/development) | Yes |
-| `PORT` | Server port | Yes |
-| `MONGO_URI` | MongoDB connection string | Yes |
-| `ACCESS_TOKEN_SECRET` | JWT access token secret | Yes |
-| `REFRESH_TOKEN_SECRET` | JWT refresh token secret | Yes |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
-| `STRIPE_SECRET_KEY` | Stripe secret key | Yes |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret | Yes |
-| `EMAIL_HOST` | SMTP host | Yes |
-| `EMAIL_USER` | Email username | Yes |
-| `EMAIL_PASS` | Email password | Yes |
-| `CLIENT_URL` | Frontend URL | Yes |
-| `REDIS_HOST` | Redis host (optional) | No |
-| `REDIS_PORT` | Redis port (optional) | No |
-| `REDIS_PASSWORD` | Redis password (optional) | No |
-
-## 🧪 Testing
+## Getting started
 
 ```bash
-# Run tests (if configured)
-pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
+npm install
+cp config/.env.example config/.env   # then fill in the values
+npm run dev
 ```
 
-## 📝 License
+The API listens on `PORT` (default 8000). `GET /health` reports the database, Redis and Cloudinary status.
 
-This project is licensed under the ISC License.
+Without SMTP settings in development, emails are not sent: the confirmation link and password reset code are
+written to the server log so you can still finish the flow locally.
 
-## 🤝 Contributing
+## Configuration
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+All variables are listed in [`config/.env.example`](config/.env.example).
 
-## 📞 Support
+| Variable | Purpose |
+| --- | --- |
+| `MONGO_URI` | MongoDB connection string (required) |
+| `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET` | JWT signing secrets (required) |
+| `SALT_ROUNDS` | bcrypt cost factor |
+| `CLIENT_URL`, `SERVER_URL` | Allowed CORS origins and links in emails |
+| `CORS_ORIGINS` | Extra allowed origins, comma separated |
+| `EMAIL_SERVICE`, `EMAIL_SMTP_PORT`, `EMAIL_SMTP_USER`, `EMAIL_SMTP_PASS` | Outgoing email |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Image uploads |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Payments |
+| `UPSTASH_REDIS_URL` / `REDIS_URL` / `REDIS_HOST` | Optional cache |
 
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
+## API overview
 
----
+All routes are under `/api/v2`.
 
-**Production Ready** ✅ | **Security Hardened** ✅ | **Performance Optimized** ✅
+| Prefix | Description |
+| --- | --- |
+| `/auth` | signup, confirm-email, login, logout, refresh-token, profile, password reset, admin user management |
+| `/categories` | list, featured, details, products of a category; admin create/update/delete |
+| `/products` | list and search, suggestions, featured, recommended; admin create/update/stock/price/images |
+| `/cart` | get, add, remove, update quantity |
+| `/wishlist` | get, add, remove, clear, check, count |
+| `/coupons` | current user's coupon and validation; admin create/update/delete/toggle |
+| `/orders` | create, user orders, order details, cancel; admin status updates and analytics |
+| `/payments` | Stripe checkout session, payment intent, success callbacks, webhook, status |
+| `/analytics` | admin dashboard data and daily sales |
+| `/contact` | public contact form; admin inbox |
+
+## Project structure
+
+```
+App/          Express app setup (middleware, CORS, routes)
+config/       environment loading and .env.example
+DB/           Mongoose connection and models
+middlewares/  auth, validation, rate limiting
+modules/      one folder per feature: routes, controller, Joi validations
+service/      email and Cloudinary helpers
+utils/        logger, errors, Redis, Stripe, pagination, uploads
+index.js      entry point (exports the app; listens when run locally)
+```
+
+## Deployment
+
+The project deploys to Vercel as a single serverless function (`vercel.json` routes every path to `index.js`).
+`index.js` exports the Express app and only calls `listen()` outside Vercel; the MongoDB connection is opened
+lazily and reused between invocations. Set the variables from `config/.env.example` in the Vercel project
+settings, with `NODE_ENV=production`, and point the Stripe webhook at `/api/v2/payments/webhook`.
+
+## License
+
+[MIT](LICENSE)
