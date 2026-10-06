@@ -1,0 +1,80 @@
+// Unsplash photos (Unsplash License allows hotlinking). Each URL was checked to
+// return 200 with an image content type before it was added here.
+const photo = (id) => `https://images.unsplash.com/photo-${id}?w=800&q=80`;
+
+export const images = {
+	phoneFront: photo("1511707171634-5f897ff02aa9"),
+	iphoneProDark: photo("1592750475338-74b7b21085ab"),
+	samsungGalaxy: photo("1610945265064-0e34e5519bbf"),
+	androidDark: photo("1598327105666-5b89351aff97"),
+	iphoneProWhite: photo("1574944985070-8f3ebc6b79d2"),
+	phoneInHand: photo("1565849904461-04a58ad377e0"),
+	androidGold: photo("1601784551446-20c9e07cdbdb"),
+	iphone15: photo("1695048133142-1a20484d2569"),
+	iphoneRed: photo("1567581935884-3349723552ca"),
+	iphoneWhite: photo("1580910051074-3eb694886505"),
+	iphoneWithAirpods: photo("1592899677977-9c10ca588bbd"),
+
+	macbookDesk: photo("1496181133206-80ce9b88a853"),
+	macbookPurple: photo("1517336714731-489689fd1ca8"),
+	macbookAir: photo("1541807084-5c52b6b3adef"),
+	laptopWhite: photo("1593642702821-c8da6771f0c6"),
+	gamingLaptop: photo("1603302576837-37561b2e2302"),
+	macbookPro: photo("1525547719571-a2d4ac8945e2"),
+	macbookSilver: photo("1611186871348-b1ce696e52c9"),
+	dellLaptop: photo("1588872657578-7efd1f1555ed"),
+
+	gamingPc: photo("1587202372775-e229f172b9d7"),
+	gamingSetup: photo("1593305841991-05c297ba4575"),
+	ps5: photo("1606144042614-b2417e99c4e3"),
+	xboxSeriesX: photo("1621259182978-fbf93132d53d"),
+	controllerNeon: photo("1612287230202-1ff1d85d1bdf"),
+	controllerDark: photo("1592840496694-26d035b52b48"),
+	xboxController: photo("1600080972464-8e5f35f63d08"),
+	gamingMouse: photo("1615663245857-ac93bb7c39e7"),
+
+	imac: photo("1527443224154-c4a3942d3acf"),
+	monitorWhite: photo("1585792180666-f7347c490ee2"),
+	monitorDesk: photo("1586210579191-33b45e38fa2c"),
+	monitorSetup: photo("1616763355548-1b606f439f86"),
+	monitorGaming: photo("1625842268584-8f3296236761"),
+	monitorNeon: photo("1547082299-de196ea013d6"),
+
+	watchMinimal: photo("1523275335684-37898b6baf30"),
+	appleWatch: photo("1546868871-7041f2a55e12"),
+	appleWatchApps: photo("1579586337278-3befd40fd17a"),
+	appleWatchWrist: photo("1508685096489-7aacd43bd3b1"),
+	appleWatchSport: photo("1544117519-31a4b719223d"),
+	appleWatchBlack: photo("1617043786394-f977fa12eddf"),
+	appleWatchBlue: photo("1631281956016-3cdc1b2fe5fb"),
+	galaxyWatch: photo("1557438159-51eec7a6c9e8"),
+
+	headphonesYellow: photo("1505740420928-5e560c06d30e"),
+	headphonesWired: photo("1583394838336-acd977736f90"),
+	earbudsCases: photo("1590658268037-6bf12165a8df"),
+	jblSpeaker: photo("1608043152269-423dbba4e7e1"),
+	headphonesGrey: photo("1546435770-a3e426bf472b"),
+	sonyHeadphones: photo("1618366712010-f4ae9c647dcb"),
+	airpodsPro: photo("1572569511254-d8f925fe2cbb"),
+	airpods: photo("1600294037681-c80b4cb5b434"),
+	earbudsDark: photo("1606220945770-b5b6c2c55bf1"),
+	headphonesRetro: photo("1484704849700-f032a568e944"),
+
+	sunglassesRound: photo("1511499767150-a48a237f0083"),
+	sunglassesBeach: photo("1577803645773-f96470509666"),
+	sunglassesSand: photo("1473496169904-658ba7c44d8a"),
+
+	ipadPro: photo("1544244015-0df4b3ffc6b0"),
+	ipadInHand: photo("1561154464-82e9adf32764"),
+	ipadPair: photo("1585790050230-5dd28404ccb9"),
+
+	smartHomeDevices: photo("1558089687-f282ffcbc126"),
+	smartSpeaker: photo("1543512214-318c7553f230"),
+	smartTv: photo("1593359677879-a4bb92f829d1"),
+
+	powerBank: photo("1609091839311-d5365f9ff1c5"),
+	charger: photo("1583863788434-e58a36330cf0"),
+	keyboard: photo("1587829741301-dc798b83add3"),
+	mouse: photo("1527864550417-7fd91fc51a46"),
+	printer: photo("1612815154858-60aa4c59eaa6"),
+};
