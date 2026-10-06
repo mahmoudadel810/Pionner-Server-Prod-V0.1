@@ -1,6 +1,7 @@
 import couponModel from "../../DB/models/couponModel.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import userModel from "../../DB/models/userModel.js";
+
 //==================================Get Coupon======================================
 
 export const getCoupon = async (req, res, next) => {
@@ -31,7 +32,7 @@ export const validateCoupon = async (req, res, next) => {
 			});
 		}
 
-		if (coupon.expirationDate < new Date()) {
+		if (coupon.expiryDate < new Date()) {
 			coupon.isActive = false;
 			await coupon.save();
 			return res.status(404).json({ 
@@ -60,16 +61,12 @@ export const getAllCoupons = async (req, res, next) => {
 		const { page = 1, limit = 10, isActive, search } = req.query;
 		const skip = (page - 1) * limit;
 
-		// Build query
 		let query = {};
 		if (isActive !== undefined) {
 			query.isActive = isActive === 'true';
 		}
 		if (search) {
-			query.$or = [
-				{ code: { $regex: search, $options: 'i' } },
-				{ description: { $regex: search, $options: 'i' } }
-			];
+			query.code = { $regex: search, $options: 'i' };
 		}
 
 		const coupons = await couponModel.find(query)
@@ -100,19 +97,17 @@ export const getAllCoupons = async (req, res, next) => {
 
 export const createCoupon = async (req, res, next) => {
 	try {
-		const { 
-			code, 
-			description, 
-			discountType, 
-			discountValue, 
-			minimumAmount, 
-			maximumUsage, 
-			expiryDate ,
-			valiedEmail
-		} = req.body;
-		console.log(req.body);
-		// const {_id} =req.user
-		// Check if coupon code already exists
+		const { code, discountPercentage, discountValue, expiryDate } = req.body;
+		const email = req.body.email ?? req.body.valiedEmail;
+
+		const user = await userModel.findOne({ email: email.toLowerCase() });
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: `No user found with email ${email}`
+			});
+		}
+
 		const existingCoupon = await couponModel.findOne({ code });
 		if (existingCoupon) {
 			return res.status(400).json({
@@ -121,35 +116,13 @@ export const createCoupon = async (req, res, next) => {
 			});
 		}
 
-		// ==== get userId==>
-			const isUserFound =await userModel.findOne({email:valiedEmail})
-		console.log(isUserFound._id.toString());
-		
-		if(!isUserFound){
-			return res.status(404).json({
-			success: false,
-			message: "user not found",
-			
-		});
-		}
-		
-		
-		
-
 		const coupon = await couponModel.create({
 			code,
-			description,
-			discountType,
-			discountValue,
-			minimumAmount,
-			maxUsage: maximumUsage,
+			discountPercentage: discountPercentage ?? discountValue,
 			expiryDate: new Date(expiryDate),
 			isActive: true,
-			userId:isUserFound._id
-			
+			userId: user._id
 		});
-		console.log(coupon);
-		
 
 		res.status(201).json({
 			success: true,
@@ -166,14 +139,10 @@ export const createCoupon = async (req, res, next) => {
 export const updateCoupon = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const updateData = req.body;
+		const { code, discountPercentage, discountValue, expiryDate, isActive } = req.body;
 
-		// If updating code, check if it already exists
-		if (updateData.code) {
-			const existingCoupon = await couponModel.findOne({ 
-				code: updateData.code, 
-				_id: { $ne: id } 
-			});
+		if (code) {
+			const existingCoupon = await couponModel.findOne({ code, _id: { $ne: id } });
 			if (existingCoupon) {
 				return res.status(400).json({
 					success: false,
@@ -182,16 +151,15 @@ export const updateCoupon = async (req, res, next) => {
 			}
 		}
 
-		// Convert expiryDate to Date if provided
-		if (updateData.expiryDate) {
-			updateData.expiryDate = new Date(updateData.expiryDate);
+		const updateData = {};
+		if (code !== undefined) updateData.code = code;
+		if ((discountPercentage ?? discountValue) !== undefined) {
+			updateData.discountPercentage = discountPercentage ?? discountValue;
 		}
+		if (expiryDate !== undefined) updateData.expiryDate = new Date(expiryDate);
+		if (isActive !== undefined) updateData.isActive = isActive;
 
-		const coupon = await couponModel.findByIdAndUpdate(
-			id,
-			updateData,
-			{ new: true }
-		);
+		const coupon = await couponModel.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
 		if (!coupon) {
 			return res.status(404).json({

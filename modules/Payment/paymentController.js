@@ -22,7 +22,7 @@ export const createCheckoutSession = async (req, res, next) => {
 		let totalAmount = 0;
 
         const lineItems = products.map((product) => {
-			const amount = Math.round(product.price * 100); // stripe wants u to send in the format of cents
+			const amount = Math.round(product.price * 100); // Stripe expects the smallest currency unit
 			totalAmount += amount * product.quantity;
 
 			return {
@@ -96,7 +96,6 @@ export const checkoutSuccess = async (req, res, next) => {
 		const session = await stripe.checkout.sessions.retrieve(sessionId);
 
 		if (session.payment_status === "paid") {
-			// Get user ID from session metadata
 			const userId = session.metadata.userId;
 			
 			if (!userId) {
@@ -106,7 +105,6 @@ export const checkoutSuccess = async (req, res, next) => {
 				});
 			}
 
-			// Check if order already exists for this session
 			const existingOrder = await orderModel.findOne({ stripeSessionId: sessionId });
 			if (existingOrder) {
 				return res.status(200).json({
@@ -185,7 +183,6 @@ export const handleStripeWebhook = async (req, res, next) => {
 			return res.status(400).send(`Webhook Error: ${err.message}`);
 		}
 
-		// Handle the event
 		switch (event.type) {
 			case 'checkout.session.completed':
 				const session = event.data.object;
@@ -248,7 +245,6 @@ async function handleCheckoutSessionCompleted(session) {
 		}
 	} catch (error) {
 		logger.error('Error handling checkout session completed:', error);
-		// Log more details for debugging
 		if (error.code === 11000) {
 			logger.error('Duplicate key error - order already exists for session:', session.id);
 		}
@@ -272,7 +268,7 @@ async function createNewCoupon(userId) {
 	const newCoupon = new couponModel({
 		code: "GIFT" + Math.random().toString(36).substring(2, 8).toUpperCase(),
 		discountPercentage: 10,
-		expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+		expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
 		userId: userId,
 	});
 
@@ -293,11 +289,9 @@ export const paymentIntentSuccess = async (req, res, next) => {
       });
     }
 
-    // Retrieve the payment intent from Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status === "succeeded") {
-      // Get user ID from the payment intent metadata
       const userId = paymentIntent.metadata?.userId;
       if (!userId) {
         return res.status(400).json({ 
@@ -306,7 +300,6 @@ export const paymentIntentSuccess = async (req, res, next) => {
         });
       }
 
-      // Check if order already exists for this paymentIntentId
       const existingOrder = await orderModel.findOne({ 
         $or: [
           { stripePaymentIntentId: paymentIntentId },
@@ -325,10 +318,8 @@ export const paymentIntentSuccess = async (req, res, next) => {
         });
       }
 
-      // Create the order
       const order = new orderModel({
         user: userId,
-        // Build full products array with DB lookups for each product
         products: await Promise.all(
           (JSON.parse(paymentIntent.metadata.products || '[]')).map(async (item) => {
             // item: { productId, quantity, price }
@@ -345,7 +336,7 @@ export const paymentIntentSuccess = async (req, res, next) => {
             };
           })
         ),
-        totalAmount: paymentIntent.amount / 100, // Convert from cents to dollars
+        totalAmount: paymentIntent.amount / 100,
         paymentStatus: "paid",
         paymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
         paymentDetails: {
@@ -355,7 +346,7 @@ export const paymentIntentSuccess = async (req, res, next) => {
           currency: paymentIntent.currency,
           status: paymentIntent.status,
         },
-        status: 'processing', // Initial order status
+        status: 'processing',
       });
 
       await order.save();
@@ -375,7 +366,6 @@ export const paymentIntentSuccess = async (req, res, next) => {
       });
     }
   } catch (error) {
-    console.error('Payment intent success error:', error);
     errorHandler(error, req, res, next);
   }
 };
@@ -395,13 +385,11 @@ export const createPaymentIntent = async (req, res, next) => {
 
 		let totalAmount = 0;
 
-		// Calculate total amount
 		products.forEach((product) => {
-			const amount = Math.round(product.price * 100); // stripe wants in cents
+			const amount = Math.round(product.price * 100); // Stripe expects the smallest currency unit
 			totalAmount += amount * product.quantity;
 		});
 
-		// Apply coupon if provided
 		let coupon = null;
 		if (couponCode) {
 			coupon = await couponModel.findOne({ code: couponCode, userId: req.user._id, isActive: true });
@@ -410,7 +398,6 @@ export const createPaymentIntent = async (req, res, next) => {
 			}
 		}
 
-		// Create payment intent
     const locale = (req.headers['accept-language'] || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -428,14 +415,11 @@ export const createPaymentIntent = async (req, res, next) => {
 			},
 		});
 
-		// Create coupon for future use if order is large enough
 		if (totalAmount >= 20000) {
 			try {
 				await createNewCoupon(req.user._id);
 			} catch (error) {
-				// Log the error but don't fail the payment
-				console.warn('Could not create coupon:', error.message);
-				// Continue with payment even if coupon creation fails
+				logger.warn(`Could not create gift coupon: ${error.message}`);
 			}
 		}
 		

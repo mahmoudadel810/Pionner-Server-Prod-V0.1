@@ -1,44 +1,55 @@
 import { Router } from "express";
 import * as couponController from "./couponController.js";
-import { validateCouponValidator } from "./couponValidations.js";
+import {
+   validateCouponValidator,
+   createCouponValidator,
+   updateCouponValidator,
+   couponIdValidator
+} from "./couponValidations.js";
 import { validation } from "../../middlewares/validation.js";
-import { protect } from "../../middlewares/auth.js";
+import { protect, adminRoute } from "../../middlewares/auth.js";
 
 const router = Router();
 
-// All coupon routes are protected
 router.use(protect);
 
-// Get user's coupon
-router.get('/getCoupon', 
+router.get('/getCoupon',
    couponController.getCoupon
 );
 
-// Validate coupon
-router.post('/validateCoupon', 
-   validation({ body: validateCouponValidator }), 
+router.post('/validateCoupon',
+   validation({ body: validateCouponValidator }),
    couponController.validateCoupon
 );
 
-// Admin routes for coupon management
-router.get('/getAllCoupons', 
+// Admin routes
+router.get('/getAllCoupons',
+   adminRoute,
    couponController.getAllCoupons
 );
 
-router.post('/createCoupon', 
+router.post('/createCoupon',
+   adminRoute,
+   validation({ body: createCouponValidator }),
    couponController.createCoupon
 );
 
-router.put('/updateCoupon/:id', 
+router.put('/updateCoupon/:id',
+   adminRoute,
+   validation({ params: couponIdValidator, body: updateCouponValidator }),
    couponController.updateCoupon
 );
 
-router.delete('/deleteCoupon/:id', 
+router.delete('/deleteCoupon/:id',
+   adminRoute,
+   validation({ params: couponIdValidator }),
    couponController.deleteCoupon
 );
 
-router.patch('/toggleStatus/:id', 
+router.patch('/toggleStatus/:id',
+   adminRoute,
+   validation({ params: couponIdValidator }),
    couponController.toggleCouponStatus
 );
 
-export default router; 
+export default router;
