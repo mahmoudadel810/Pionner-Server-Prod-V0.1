@@ -14,7 +14,6 @@ export const createOrder = async (req, res, next) => {
 		const { products, shippingAddress, stripeSessionId } = req.body;
 		const userId = req.user._id;
 
-		// Validate products array
 		if (!products || !Array.isArray(products) || products.length === 0) {
 			return res.status(400).json({
 				success: false,
@@ -22,7 +21,6 @@ export const createOrder = async (req, res, next) => {
 			});
 		}
 
-		// Fetch product details and calculate total
 		let totalAmount = 0;
 		const orderProducts = [];
 
@@ -37,7 +35,6 @@ export const createOrder = async (req, res, next) => {
 				});
 			}
 
-			// Check if product is active
 			if (!product.isActive) {
 				return res.status(400).json({
 					success: false,
@@ -45,7 +42,6 @@ export const createOrder = async (req, res, next) => {
 				});
 			}
 
-			// Check stock availability
 			if (product.stockQuantity < item.quantity) {
 				return res.status(400).json({
 					success: false,
@@ -73,12 +69,10 @@ export const createOrder = async (req, res, next) => {
 				productImage: product.image
 			});
 
-			// Update product stock and analytics
 			await product.updateStockAfterOrder(item.quantity);
 			await product.updateRevenue(itemTotal);
 		}
 
-		// Create order
 		const order = await orderModel.create({
 			user: userId,
 			products: orderProducts,
@@ -87,7 +81,6 @@ export const createOrder = async (req, res, next) => {
 			stripeSessionId
 		});
 
-		// Populate the created order
 		const populatedOrder = await orderModel.findById(order._id)
 			.populate('user', 'name email')
 			.populate('products.product', 'name image price description')
@@ -99,7 +92,6 @@ export const createOrder = async (req, res, next) => {
 			data: populatedOrder
 		});
 
-		// Send admin notification for new order
 		try {
 			await sendEmail({
 				to: process.env.EMAIL_SMTP_USER,
@@ -217,7 +209,6 @@ export const getOrderById = async (req, res, next) => {
 			});
 		}
 
-		// Check if user can access this order
 		if (req.user.role !== 'admin' && order.user._id.toString() !== req.user._id.toString()) {
 			return res.status(403).json({
 				success: false,
@@ -356,7 +347,6 @@ export const getOrdersAnalytics = async (req, res, next) => {
 	try {
 		const { period = '30d' } = req.query;
 		
-		// Calculate date range
 		const now = new Date();
 		let startDate;
 		
@@ -374,7 +364,6 @@ export const getOrdersAnalytics = async (req, res, next) => {
 				startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 		}
 
-		// Get analytics data
 		const analytics = await orderModel.aggregate([
 			{
 				$match: {
@@ -393,7 +382,6 @@ export const getOrdersAnalytics = async (req, res, next) => {
 			}
 		]);
 
-		// Get category-wise analytics
 		const categoryAnalytics = await orderModel.aggregate([
 			{
 				$match: {
@@ -418,7 +406,6 @@ export const getOrdersAnalytics = async (req, res, next) => {
 			}
 		]);
 
-		// Get status distribution
 		const statusDistribution = await orderModel.aggregate([
 			{
 				$match: {
@@ -461,7 +448,6 @@ export const getProductAnalytics = async (req, res, next) => {
 	try {
 		const { period = '30d', categoryId } = req.query;
 		
-		// Calculate date range
 		const now = new Date();
 		let startDate;
 		
@@ -479,7 +465,6 @@ export const getProductAnalytics = async (req, res, next) => {
 				startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 		}
 
-		// Build match conditions
 		let matchConditions = {
 			createdAt: { $gte: startDate },
 			paymentStatus: 'paid'
@@ -489,7 +474,6 @@ export const getProductAnalytics = async (req, res, next) => {
 			matchConditions['categoryBreakdown.categoryId'] = new mongoose.Types.ObjectId(categoryId);
 		}
 
-		// Get product performance analytics
 		const productAnalytics = await orderModel.aggregate([
 			{
 				$match: matchConditions
@@ -517,7 +501,6 @@ export const getProductAnalytics = async (req, res, next) => {
 			}
 		]);
 
-		// Get stock analytics
 		const stockAnalytics = await productModel.aggregate([
 			{
 				$match: { isActive: true }
@@ -534,13 +517,10 @@ export const getProductAnalytics = async (req, res, next) => {
 			}
 		]);
 
-		// Get best selling products
 		const bestSellingProducts = await productModel.getBestSellingProducts(10);
 
-		// Get highest revenue products
 		const highestRevenueProducts = await productModel.getHighestRevenueProducts(10);
 
-		// Get low stock products
 		const lowStockProducts = await productModel.getLowStockProducts();
 
 		const result = {
@@ -576,7 +556,6 @@ export const getOrdersByCategory = async (req, res, next) => {
 		const { page = 1, limit = 10, status } = req.query;
 		const skip = (page - 1) * limit;
 
-		// Verify category exists
 		const category = await categoryModel.findById(categoryId);
 		if (!category) {
 			return res.status(404).json({
@@ -629,7 +608,6 @@ export const cancelOrder = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    // Find the order and ensure it belongs to the user
     const order = await orderModel.findOne({ _id: id, user: userId });
     if (!order) {
       return res.status(404).json({
@@ -651,7 +629,7 @@ export const cancelOrder = async (req, res, next) => {
 
     try {
         await sendEmail({
-            to: order.user.email,
+            to: req.user.email,
             subject: 'Order Cancelled',
             message: `
                 <h2>Your Order Has Been Cancelled</h2>

@@ -18,24 +18,18 @@ const categorySchema = new mongoose.Schema(
 			maxlength: [500, "Category description cannot exceed 500 characters"]
 		},
 		image: {
-			type: String,
-			// required: [true, "Category image is required"]
+			type: String
 		},
 		slug: {
 			type: String,
 			trim: true,
-			lowercase: true,
-			unique: true
+			lowercase: true
 		},
 
 		isActive: {
 			type: Boolean,
 			default: true
-      },
-      // products: [{
-      //   type: mongoose.Schema.Types.ObjectId,
-      //   ref: 'Product'
-      // }],
+		},
 		productCount: {
 			type: Number,
 			default: 0
@@ -85,19 +79,8 @@ categorySchema.pre('save', async function(next) {
 	}
 });
 
-// Index for faster lookups and uniqueness at the database level
 categorySchema.index({ slug: 1 }, { unique: true, sparse: true });
 
-// Virtual for products relationship (commented out since we now have a real products array)
-// categorySchema.virtual('products', {
-// 	ref: 'Product',
-// 	localField: '_id',
-// 	foreignField: 'categoryId'
-// });
-
-
-
-// Static method to get categories with product count
 categorySchema.statics.getCategoriesWithProductCount = async function() {
 	return this.aggregate([
 		{

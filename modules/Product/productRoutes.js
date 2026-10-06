@@ -12,40 +12,33 @@ import { uploaders, handleMulterError, uploadToCloudinary } from "../../utils/mu
 
 const router = Router();
 
-// Get all products (with search functionality)
 router.get('/getProducts', 
    validation({ query: productQueryValidator }), 
    productController.getAllProducts
 );
 
-// Get search suggestions
 router.get('/searchSuggestions', 
    productController.getSearchSuggestions
 );
 
-// Get featured products
 router.get('/getFeaturedProducts', 
    productController.getFeaturedProducts
 );
 
-// Get recommended products
 router.get('/getRecommendedProducts', 
    productController.getRecommendedProducts
 );
 
-// Get single product by ID
 router.get('/getProduct/:id', 
    validation({ params: productIdValidator }), 
    productController.getProduct
 );
 
-// Get products by category
 router.get('/getProductsByCategory/:category', 
    validation({ params: categoryValidator }), 
    productController.getProductsByCategory
 );
 
-// Create product with multiple images upload (Admin only)
 router.post('/createProduct', 
    protect,
    adminRoute,
@@ -56,7 +49,6 @@ router.post('/createProduct',
    productController.createProduct
 );
 
-// Create product with multiple images upload (Admin only)
 router.post('/createProductWithImages', 
    protect,
    adminRoute,
@@ -67,7 +59,6 @@ router.post('/createProductWithImages',
    productController.createProductWithImages
 );
 
-// Upload product image (Admin only)
 router.post('/uploadProductImage/:id', 
    protect,
    adminRoute,
@@ -78,7 +69,6 @@ router.post('/uploadProductImage/:id',
    productController.uploadProductImage
 );
 
-// Upload multiple product images (Admin only)
 router.post('/uploadProductImages/:id', 
    protect,
    adminRoute,
@@ -89,7 +79,6 @@ router.post('/uploadProductImages/:id',
    productController.uploadProductImages
 );
 
-// Delete product (Admin only)
 router.delete('/deleteProduct/:id', 
    protect,
    adminRoute,
@@ -97,7 +86,6 @@ router.delete('/deleteProduct/:id',
    productController.deleteProduct
 );
 
-// Toggle featured product (Admin only)
 router.patch('/toggleFeaturedProduct/:id', 
    protect,
    adminRoute,
@@ -105,7 +93,6 @@ router.patch('/toggleFeaturedProduct/:id',
    productController.toggleFeaturedProduct
 );
 
-// Update product (Admin only)
 router.put('/updateProduct/:id', 
    protect,
    adminRoute,
@@ -116,7 +103,6 @@ router.put('/updateProduct/:id',
    productController.updateProduct
 );
 
-// Update product stock (Admin only)
 router.patch('/updateStock/:id', 
    protect,
    adminRoute,
@@ -124,7 +110,6 @@ router.patch('/updateStock/:id',
    productController.updateProductStock
 );
 
-// Update product price (Admin only)
 router.patch('/updatePrice/:id', 
    protect,
    adminRoute,

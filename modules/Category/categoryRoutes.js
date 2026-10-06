@@ -17,21 +17,16 @@ const router = express.Router();
 
 //==================================Public Routes======================================
 
-// Get all categories (with pagination, search, filtering)
 router.get("/", getAllCategories);
 
-// Get featured categories
 router.get("/featured", getFeaturedCategories);
 
-// Get category by ID
 router.get("/:id", getCategoryById);
 
-// Get products by category ID
 router.get("/:id/products", getProductsByCategory);
 
 //==================================Admin Routes (Protected)======================================
 
-// Create category (Admin only)
 router.post(
 	"/",
 	protect,
@@ -48,7 +43,6 @@ router.post(
 	createCategory
 );
 
-// Update category (Admin only)
 router.put(
 	"/:id",
 	protect,
@@ -65,10 +59,8 @@ router.put(
 	updateCategory
 );
 
-// Delete category (Admin only)
 router.delete("/:id", protect, authorize("admin"), deleteCategory);
 
-// Toggle category status (Admin only)
 router.patch("/:id/toggle-status", protect, authorize("admin"), toggleCategoryStatus);
 
 export default router;

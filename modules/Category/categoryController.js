@@ -11,7 +11,6 @@ export const createCategory = async (req, res, next) => {
 	try {
 		const { name, description, featured = false, order = 0 } = req.body;
 
-		// Handle file upload from multer
 		let imageUrl = "";
 		if (req.uploadedFile) {
 			imageUrl = req.uploadedFile.url; // Cloudinary URL from uploadToCloudinary middleware
@@ -26,7 +25,6 @@ export const createCategory = async (req, res, next) => {
 			
 		});
 
-		// Clear cache
 		if (redis) {
 			await redis.del("categories");
 			await redis.del("featured_categories");
@@ -48,7 +46,6 @@ export const getAllCategories = async (req, res, next) => {
 	try {
 		const { page = 1, limit = 10, search = "", featured = "", sortBy = "order", sortOrder = "asc" } = req.query;
 
-		// Check Redis cache first
 		if (redis && !search && !featured) {
 			const cachedCategories = await redis.get("categories");
 			if (cachedCategories) {
@@ -60,24 +57,19 @@ export const getAllCategories = async (req, res, next) => {
 			}
 		}
 
-		// Build search query
 		const searchQuery = buildSearchQuery({
 			search,
 			searchFields: ["name", "description"]
 		});
 
-		// Add featured filter
 		if (featured === "true") {
 			searchQuery.featured = true;
 		}
 
-		// Add active filter
 		searchQuery.isActive = true;
 
-		// Get total count
 		const totalCount = await categoryModel.countDocuments(searchQuery);
 
-		// Build pagination
 		const pagination = paginationHelper({
 			page,
 			limit,
@@ -85,14 +77,11 @@ export const getAllCategories = async (req, res, next) => {
 			search
 		});
 
-		// Build sort object
 		const sortObject = {};
 		sortObject[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-		// Get categories with product count (optimized - no product population)
 		const categories = await categoryModel.getCategoriesWithProductCount();
 
-		// Apply search and pagination filters
 		let filteredCategories = categories.filter(cat => {
 			if (search) {
 				const searchLower = search.toLowerCase();
@@ -102,12 +91,10 @@ export const getAllCategories = async (req, res, next) => {
 			return true;
 		});
 
-		// Apply featured filter
 		if (featured === "true") {
 			filteredCategories = filteredCategories.filter(cat => cat.featured);
 		}
 
-		// Apply pagination
 		const startIndex = pagination.skip;
 		const endIndex = startIndex + pagination.limit;
 		const paginatedCategories = filteredCategories.slice(startIndex, endIndex);
@@ -121,7 +108,6 @@ export const getAllCategories = async (req, res, next) => {
 			message: `${filteredCategories.length} categories found`
 		});
 
-		// Cache the results if Redis is available and no search/filter
 		if (redis && !search && !featured) {
 			await redis.set("categories", JSON.stringify(response), 'EX', 3600); // Cache for 1 hour
 		}
@@ -136,7 +122,6 @@ export const getAllCategories = async (req, res, next) => {
 
 export const getFeaturedCategories = async (req, res, next) => {
 	try {
-		// Check Redis cache first
 		if (redis) {
 			const cachedCategories = await redis.get("featured_categories");
 			if (cachedCategories) {
@@ -154,13 +139,13 @@ export const getFeaturedCategories = async (req, res, next) => {
 		}).sort({ order: 1, name: 1 }).lean();
 
 		if (!categories.length) {
-			return res.status(404).json({ 
-				success: false,
-				message: "No featured categories found" 
+			return res.json({
+				success: true,
+				message: "No featured categories found",
+				data: []
 			});
 		}
 
-		// Cache the results if Redis is available
 		if (redis) {
 			await redis.set("featured_categories", JSON.stringify(categories), 'EX', 3600); // Cache for 1 hour
 		}
@@ -207,10 +192,6 @@ export const getCategoryById = async (req, res, next) => {
 	}
 };
 
-//==================================Get Category By Slug======================================
-
-// Removed getCategoryBySlug function as slug field no longer exists in category model
-
 //==================================Update Category======================================
 
 export const updateCategory = async (req, res, next) => {
@@ -227,9 +208,7 @@ export const updateCategory = async (req, res, next) => {
 			});
 		}
 
-		// Handle file upload from multer
 		if (req.uploadedFile) {
-			// Delete old image from Cloudinary if exists
 			if (category.image) {
 				try {
 					await deleteFromCloudinary(category.image);
@@ -240,7 +219,6 @@ export const updateCategory = async (req, res, next) => {
 			category.image = req.uploadedFile.url;
 		}
 
-		// Update fields
 		if (name) category.name = name;
 		if (description) category.description = description;
 		if (featured !== undefined) category.featured = featured;
@@ -248,7 +226,6 @@ export const updateCategory = async (req, res, next) => {
 
 		await category.save();
 
-		// Clear cache
 		if (redis) {
 			await redis.del("categories");
 			await redis.del("featured_categories");
@@ -279,7 +256,6 @@ export const deleteCategory = async (req, res, next) => {
 			});
 		}
 
-		// Check if category has products
 		const productCount = await productModel.countDocuments({ categoryId: id });
 		if (productCount > 0) {
 			return res.status(400).json({ 
@@ -288,7 +264,6 @@ export const deleteCategory = async (req, res, next) => {
 			});
 		}
 
-		// Delete image from Cloudinary if exists
 		if (category.image) {
 			try {
 				await deleteFromCloudinary(category.image);
@@ -299,7 +274,6 @@ export const deleteCategory = async (req, res, next) => {
 
 		await categoryModel.findByIdAndDelete(id);
 
-		// Clear cache
 		if (redis) {
 			await redis.del("categories");
 			await redis.del("featured_categories");
@@ -332,7 +306,6 @@ export const toggleCategoryStatus = async (req, res, next) => {
 		category.isActive = !category.isActive;
 		await category.save();
 
-		// Clear cache
 		if (redis) {
 			await redis.del("categories");
 			await redis.del("featured_categories");
@@ -355,7 +328,6 @@ export const getProductsByCategory = async (req, res, next) => {
 		const { id } = req.params;
 		const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
 
-		// Verify category exists and is active
 		const category = await categoryModel.findOne({ 
 			_id: id, 
 			isActive: true 
@@ -368,24 +340,19 @@ export const getProductsByCategory = async (req, res, next) => {
 			});
 		}
 
-		// Build search query
 		const searchQuery = { categoryId: id };
 
-		// Get total count
 		const totalCount = await productModel.countDocuments(searchQuery);
 
-		// Build pagination
 		const pagination = paginationHelper({
 			page,
 			limit,
 			totalCount
 		});
 
-		// Build sort object
 		const sortObject = {};
 		sortObject[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-		// Get products with pagination
 		const products = await productModel.find(searchQuery)
 			.sort(sortObject)
 			.skip(pagination.skip)
@@ -399,7 +366,6 @@ export const getProductsByCategory = async (req, res, next) => {
 			message: `${totalCount} products found in ${category.name} category`
 		});
 
-		// Add category info to response
 		response.category = category;
 
 		res.json(response);
@@ -407,7 +373,3 @@ export const getProductsByCategory = async (req, res, next) => {
 		errorHandler(error, req, res, next);
 	}
 };
-
-//==================================Get Products By Category Slug======================================
-
-// Removed getProductsByCategorySlug function as slug field no longer exists in category model

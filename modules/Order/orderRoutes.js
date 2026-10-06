@@ -12,21 +12,17 @@ import { protect, adminRoute } from "../../middlewares/auth.js";
 
 const router = Router();
 
-// All order routes are protected
 router.use(protect);
 
-// Create new order
 router.post('/create', 
    validation({ body: createOrderValidator }), 
    orderController.createOrder
 );
 
-// Get user's orders
 router.get('/getUserOrders', 
    orderController.getUserOrders
 );
 
-// Get order by ID
 router.get('/getOrder/:id', 
    validation({ params: orderIdValidator }), 
    orderController.getOrderById
@@ -74,7 +70,6 @@ router.delete('/deleteOrder/:id',
    orderController.deleteOrder
 );
 
-// Cancel order (user)
 router.patch('/cancel/:id', 
   validation({ params: orderIdValidator }), 
   orderController.cancelOrder
