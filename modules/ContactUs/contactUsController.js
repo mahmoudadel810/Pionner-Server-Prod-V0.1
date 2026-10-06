@@ -1,12 +1,15 @@
 import contactUsModel from "../../DB/models/contactUs.js";
 import sendEmail from "../../service/sendEmail.js";
+import logger from "../../utils/logger.js";
+
+const escapeHtml = (value = "") =>
+   String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 
 //==================================Create contact form submission==================================
 export const createContact = async (req, res, next) => {
    try {
       const { name, email, subject, message } = req.body;
 
-      // Create new contact submission
       const contact = await contactUsModel.create({
          name,
          email,
@@ -14,21 +17,26 @@ export const createContact = async (req, res, next) => {
          message
       });
 
-      // Send confirmation email to user
+      const safe = {
+         name: escapeHtml(name),
+         email: escapeHtml(email),
+         subject: escapeHtml(subject),
+         message: escapeHtml(message)
+      };
+
       const emailContent = `
          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; border-radius: 8px; padding: 32px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
             <div style="text-align: center; margin-bottom: 24px;">
-               <img src="https://Pinner.com/assets/logo.png" alt="Pionner Logo" style="height: 48px; margin-bottom: 8px;">
                <h2 style="color: #222; margin: 0;">Thank you for contacting Pionner</h2>
             </div>
-            <p style="font-size: 16px; color: #333;">Dear <strong>${name}</strong>,</p>
+            <p style="font-size: 16px; color: #333;">Dear <strong>${safe.name}</strong>,</p>
             <p style="font-size: 15px; color: #444; margin-bottom: 24px;">
                We appreciate you reaching out to us. Your message has been received and our support team will get back to you as soon as possible.
             </p>
             <div style="background: #fff; border-radius: 6px; padding: 20px 18px; border: 1px solid #ececec; margin-bottom: 24px;">
-               <p style="margin: 0 0 8px 0; color: #666;"><strong>Subject:</strong> ${subject}</p>
+               <p style="margin: 0 0 8px 0; color: #666;"><strong>Subject:</strong> ${safe.subject}</p>
                <p style="margin: 0; color: #666;"><strong>Message:</strong></p>
-               <div style="margin: 8px 0 0 0; color: #444; white-space: pre-line;">${message}</div>
+               <div style="margin: 8px 0 0 0; color: #444; white-space: pre-line;">${safe.message}</div>
             </div>
             <p style="font-size: 14px; color: #888;">If you have any additional information to share, simply reply to this email.</p>
             <p style="font-size: 15px; color: #333; margin-top: 32px;">
@@ -38,28 +46,26 @@ export const createContact = async (req, res, next) => {
          </div>
       `;
 
-      await sendEmail({
-         to: email,
-         subject: "Thank you for contacting us - Pionner",
-         message: emailContent
-      });
-
-      // Send notification email to admin
       const adminEmailContent = `
          <h2>New Contact Form Submission</h2>
-         <p><strong>Name:</strong> ${name}</p>
-         <p><strong>Email:</strong> ${email}</p>
-         <p><strong>Subject:</strong> ${subject}</p>
+         <p><strong>Name:</strong> ${safe.name}</p>
+         <p><strong>Email:</strong> ${safe.email}</p>
+         <p><strong>Subject:</strong> ${safe.subject}</p>
          <p><strong>Message:</strong></p>
-         <p>${message}</p>
+         <p>${safe.message}</p>
          <p><strong>Submitted at:</strong> ${new Date().toLocaleString()}</p>
       `;
 
-      await sendEmail({
-         to: process.env.EMAIL_SMTP_USER,
-         subject: `New Contact Form Submission - ${subject}`,
-         message: adminEmailContent
-      });
+      // The submission is already stored; email delivery is best effort
+      const results = await Promise.allSettled([
+         sendEmail({ to: email, subject: "Thank you for contacting us - Pionner", message: emailContent }),
+         sendEmail({ to: process.env.EMAIL_SMTP_USER, subject: `New Contact Form Submission - ${subject}`, message: adminEmailContent })
+      ]);
+      for (const result of results) {
+         if (result.status === "rejected") {
+            logger.error(`Contact form email failed: ${result.reason?.message}`);
+         }
+      }
 
       res.status(201).json({
          success: true,
@@ -118,7 +124,6 @@ export const getAllContact = async (req, res, next) => {
       next(error);
    }
 };
-
 
 //==================================Get single contact submission (Admin only)==================================
 export const getContact = async (req, res, next) => {

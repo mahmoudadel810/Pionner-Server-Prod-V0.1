@@ -3,14 +3,13 @@ import jwt from "jsonwebtoken";
 import { nanoid } from 'nanoid';
 import userModel from "../../DB/models/userModel.js";
 import { redis } from "../../utils/redis.js";
-import sendEmail from "../../service/sendEmail.js";
+import sendEmail, { isEmailConfigured } from "../../service/sendEmail.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 import { deleteFromCloudinary } from "../../utils/multer.js";
 import { generateTokens, storeRefreshToken, setCookies, tokenFunction } from "../../utils/tokenFunction.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { AppError } from "../../utils/AppError.js";
 import logger from "../../utils/logger.js";
-
 
 //==================================Signup======================================
 
@@ -23,28 +22,24 @@ export const signUp = asyncHandler(async (req, res, next) => {
 		return next(new AppError('User already exists', 400));
 	}
 
-	const user = new userModel({
+	const user = await userModel.create({
 		name,
 		email,
 		phone,
 		password
 	});
-	
-	await user.save();
 
-	// Generate confirmation token
 	const confirmationToken = tokenFunction({ payload: user._id, generate: true });
+	const clientUrl = (process.env.CLIENT_URL || 'https://pionner-v21.vercel.app').replace(/\/$/, '');
+	const confirmationLink = `${clientUrl}/confirm-email/${confirmationToken}`;
 
-	// Send confirmation email
-	const confirmationLink = `${process.env.CLIENT_URL || 'https://pionner-v2.vercel.app/'}/confirm-email/${confirmationToken}`;
-
-	const Send = await sendEmail({
+	const sendConfirmation = () => sendEmail({
 		to: user.email,
-		subject: "Confirm your email - Pioneer",
+		subject: "Confirm your email - Pionner",
 		message: `
 			<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 				<div style="text-align: center; margin-bottom: 30px;">
-					<h1 style="color: #333; margin-bottom: 10px;">Welcome to Pioneer!</h1>
+					<h1 style="color: #333; margin-bottom: 10px;">Welcome to Pionner!</h1>
 					<p style="color: #666; font-size: 16px;">Your shopping journey starts here</p>
 				</div>
 				
@@ -54,7 +49,7 @@ export const signUp = asyncHandler(async (req, res, next) => {
 						Hi ${user.name},
 					</p>
 					<p style="color: #555; line-height: 1.6; margin-bottom: 20px;">
-						Thank you for registering with Pioneer! To complete your registration and start shopping, 
+						Thank you for registering with Pionner! To complete your registration and start shopping, 
 						please confirm your email address by clicking the button below.
 					</p>
 					
@@ -76,21 +71,34 @@ export const signUp = asyncHandler(async (req, res, next) => {
 				</div>
 				
 				<div style="text-align: center; color: #666; font-size: 14px;">
-					<p>This link will expire in 24 hours for security reasons.</p>
-					<p>If you didn't create an account with Pioneer, please ignore this email.</p>
+					<p>This link will expire in 1 hour for security reasons.</p>
+					<p>If you didn't create an account with Pionner, please ignore this email.</p>
 				</div>
 				
 				<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
 					<p style="color: #999; font-size: 12px;">
-						© 2024 Pioneer. All rights reserved.
+						© 2024 Pionner. All rights reserved.
 					</p>
 				</div>
 			</div>
 		`
 	});
 
-	if (!Send) {
-		return next(new AppError('Failed to send confirmation email', 500));
+	let sent = false;
+	try {
+		sent = await sendConfirmation();
+	} catch (error) {
+		logger.error(`Confirmation email to ${user.email} failed: ${error.message}`);
+	}
+
+	if (!sent) {
+		if (!isEmailConfigured() && process.env.NODE_ENV !== 'production') {
+			logger.info(`SMTP not configured. Confirmation link for ${user.email}: ${confirmationLink}`);
+		} else {
+			// Don't keep an account the user can never confirm
+			await userModel.deleteOne({ _id: user._id });
+			return next(new AppError('Could not send the confirmation email. Please try again later.', 503));
+		}
 	}
 
 	res.status(201).json({
@@ -144,26 +152,21 @@ export const login = asyncHandler(async (req, res, next) => {
 	const { email, password } = req.body;
 	const user = await userModel.findOne({ email });
 	
-	// Check if user exists
 	if (!user) {
 		return next(new AppError('User not found', 400));
 	}
 
-	// Check if user has confirmed their email
 	if (!user.isConfirmed) {
 		return next(new AppError('Please verify your email address first', 401));
 	}
 
-	// Verify password
 	const isPasswordValid = await user.comparePassword(password);
 	if (!isPasswordValid) {
 		return next(new AppError('Invalid email or password', 401));
 	}
 
-	// Update user status to active upon successful login
 	await userModel.findByIdAndUpdate(user._id, { status: "active" });
 
-	// Generate tokens and authenticate
 	const { accessToken, refreshToken } = generateTokens(user._id);
 	if (redis) {
 		await storeRefreshToken(user._id, refreshToken);
@@ -220,7 +223,6 @@ export const refreshToken = async (req, res, next) => {
 		// Check for refresh token in cookies first, then in Authorization header
 		let refreshToken = req.cookies.refreshToken;
 		
-		// If no cookie token, check Authorization header
 		if (!refreshToken) {
 			const authHeader = req.headers.authorization;
 			if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -237,7 +239,6 @@ export const refreshToken = async (req, res, next) => {
 
 		const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 		
-		// Check if Redis is available
 		if (redis) {
 			const storedToken = await redis.get(`refresh_token:${decoded.userId}`);
 			if (storedToken !== refreshToken) {
@@ -250,14 +251,12 @@ export const refreshToken = async (req, res, next) => {
 
 		const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
 
-		// Set cookie for same-origin requests
 		res.cookie("accessToken", accessToken, {
 			httpOnly: false, // Allow frontend to access
 			secure: process.env.NODE_ENV === "production",
 			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 			maxAge: 60 * 60 * 1000, // 1 hour
 			path: "/",
-			domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser handle domain
 		});
 
 		// Also set token in header for cross-origin requests
@@ -323,7 +322,6 @@ export const uploadProfileImage = async (req, res, next) => {
 		logger.info("User found:", user._id);
 		logger.debug("Current profile image:", user.profileImage);
 
-		// Delete old profile image from Cloudinary if exists
 		if (user.profileImage) {
 			try {
 				await deleteFromCloudinary(user.profileImage);
@@ -333,7 +331,6 @@ export const uploadProfileImage = async (req, res, next) => {
 			}
 		}
 
-		// Update user with new profile image from Cloudinary
 		if (req.uploadedFile && req.uploadedFile.url) {
 			logger.info("New profile image URL:", req.uploadedFile.url);
 			user.profileImage = req.uploadedFile.url;
@@ -378,7 +375,7 @@ export const forgotPassword = async (req, res, next) => {
 		const resetPasswordToken = nanoid(6);
 		const tokenExpiration = new Date(Date.now() + 15 * 60 * 1000);
 
-		const emailed = await sendEmail({
+		const sendResetCode = () => sendEmail({
 			to: email,
 			subject: 'Reset your Password',
 			message: `
@@ -427,20 +424,27 @@ export const forgotPassword = async (req, res, next) => {
 			`
 		});
 
-		if (!emailed) {
-			return res.status(503).json({
-				success: false,
-				message: 'Failed to send password reset email. Please try again later.'
-			});
+		let emailed = false;
+		try {
+			emailed = await sendResetCode();
+		} catch (error) {
+			logger.error(`Password reset email to ${email} failed: ${error.message}`);
 		}
 
-		try {
-			user.resetPasswordToken = resetPasswordToken;
-			user.resetPasswordTokenExpiresIn = tokenExpiration;
-			await user.save();
-		} catch (saveError) {
-			logger.error("Failed to save reset password token to user, but email was sent:", saveError);
+		if (!emailed) {
+			if (!isEmailConfigured() && process.env.NODE_ENV !== 'production') {
+				logger.info(`SMTP not configured. Password reset code for ${email}: ${resetPasswordToken}`);
+			} else {
+				return res.status(503).json({
+					success: false,
+					message: 'Failed to send password reset email. Please try again later.'
+				});
+			}
 		}
+
+		user.resetPasswordToken = resetPasswordToken;
+		user.resetPasswordTokenExpiresIn = tokenExpiration;
+		await user.save();
 
 		res.status(200).json({
 			success: true,
@@ -475,7 +479,6 @@ export const resetPassword = async (req, res, next) => {
 			});
 		}
 
-		// Check if token has expired (15 minutes)
 		if (user.resetPasswordTokenExpiresIn && new Date() > user.resetPasswordTokenExpiresIn) {
 			return res.status(400).json({
 				success: false,
@@ -483,7 +486,6 @@ export const resetPassword = async (req, res, next) => {
 			});
 		}
 
-		// Hash new password and update user
 		const hashedPassword = await bcrypt.hash(newPassword, +(process.env.SALT_ROUNDS));
 		const userEmail = user.email;
 
@@ -543,7 +545,7 @@ export const resetPassword = async (req, res, next) => {
 					</div>
 				</div>
 			`
-		});
+		}).catch((error) => logger.error(`Password change notice to ${userEmail} failed: ${error.message}`));
 
 		res.status(200).json({
 			success: true,
@@ -561,7 +563,6 @@ export const updateProfile = async (req, res, next) => {
 		const { name, email, phone } = req.body;
 		const userId = req.user._id;
 
-		// Check if email is already taken by another user
 		if (email) {
 			const existingUser = await userModel.findOne({ email, _id: { $ne: userId } });
 			if (existingUser) {
@@ -572,7 +573,6 @@ export const updateProfile = async (req, res, next) => {
 			}
 		}
 
-		// Check if phone is already taken by another user
 		if (phone) {
 			const existingUser = await userModel.findOne({ phone, _id: { $ne: userId } });
 			if (existingUser) {
@@ -612,7 +612,6 @@ export const updatePassword = async (req, res, next) => {
 		const { currentPassword, newPassword } = req.body;
 		const userId = req.user._id;
 
-		// Get user with password
 		const user = await userModel.findById(userId);
 		if (!user) {
 			return res.status(404).json({
@@ -621,7 +620,6 @@ export const updatePassword = async (req, res, next) => {
 			});
 		}
 
-		// Verify current password
 		const isCurrentPasswordValid = await user.comparePassword(currentPassword);
 		if (!isCurrentPasswordValid) {
 			return res.status(400).json({
@@ -630,11 +628,9 @@ export const updatePassword = async (req, res, next) => {
 			});
 		}
 
-		// Hash new password
 		const saltRounds = +(process.env.SALT_ROUNDS);
 		const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-		// Update password
 		await userModel.findByIdAndUpdate(
 			userId,
 			{
@@ -660,7 +656,6 @@ export const getAllUsers = async (req, res, next) => {
 		const { page = 1, limit = 10, role, status, search } = req.query;
 		const skip = (page - 1) * limit;
 
-		// Build query
 		let query = {};
 		if (role) {
 			query.role = role;

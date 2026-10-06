@@ -8,7 +8,9 @@ export const initCloudinary = () => {
         api_secret: process.env.CLOUDINARY_API_SECRET,
     });
 
-   logger.info('Cloudinary configuration completed');
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+        logger.warn('Cloudinary not configured, image uploads are disabled');
+    }
 };
 
 
