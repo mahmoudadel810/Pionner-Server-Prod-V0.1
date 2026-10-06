@@ -9,7 +9,6 @@ export const protect= async (req, res, next) => {
 		// Check for token in cookies first, then in Authorization header
 		let accessToken = req.cookies.accessToken;
 		
-		// If no cookie token, check Authorization header
 		if (!accessToken) {
 			const authHeader = req.headers.authorization;
 			if (authHeader && authHeader.startsWith('Bearer ')) {

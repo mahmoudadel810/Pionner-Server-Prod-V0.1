@@ -3,7 +3,6 @@ import { v2 as cloudinary } from 'cloudinary';
 import { uploadImage } from '../service/cloudinary.js';
 import logger from './logger.js';
 
-// Custom error class for file upload errors
 class FileUploadError extends Error {
     constructor(message, statusCode = 400) {
         super(message);
@@ -12,9 +11,6 @@ class FileUploadError extends Error {
     }
 }
 
-// Using imported uploadImage from cloudinary service
-
-// Cloudinary delete function
 const deleteImage = async (publicId) => {
     try {
         const result = await cloudinary.uploader.destroy(publicId);
@@ -25,7 +21,6 @@ const deleteImage = async (publicId) => {
     }
 };
 
-// Cloudinary get info function
 const getImageInfo = async (publicId) => {
     try {
         const result = await cloudinary.api.resource(publicId);
@@ -36,7 +31,6 @@ const getImageInfo = async (publicId) => {
     }
 };
 
-// Extract public ID from Cloudinary URL
 const extractPublicId = (imageUrl) => {
     try {
         const urlParts = imageUrl.split('/');
@@ -49,7 +43,6 @@ const extractPublicId = (imageUrl) => {
     }
 };
 
-// File type configurations
 const allowedMimeTypes = {
     image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
     document: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
@@ -63,7 +56,6 @@ const fileSizeLimits = {
     extraLarge: 50 * 1024 * 1024 // 50MB
 };
 
-// Create file filter function
 function createFileFilter(allowedTypes) {
     return (req, file, cb) => {
         if (allowedTypes.includes(file.mimetype)) {
@@ -74,7 +66,6 @@ function createFileFilter(allowedTypes) {
     };
 }
 
-// Create uploader function
 export function createUploader(options = {}) {
     const {
         allowedTypes = allowedMimeTypes.image,
@@ -94,7 +85,6 @@ export function createUploader(options = {}) {
     });
 }
 
-// Pre-configured uploaders for common use cases
 export const uploaders = {
     // Product images (single image)
     productImage: createUploader({
@@ -146,8 +136,7 @@ export const uploaders = {
     })
 };
 
-// Middleware to handle file upload to Cloudinary
-export const uploadToCloudinary = (folder = 'theshop') => {
+export const uploadToCloudinary = (folder = 'pionner') => {
     return async (req, res, next) => {
         try {
             if (!req.files && !req.file) {
@@ -176,7 +165,6 @@ export const uploadToCloudinary = (folder = 'theshop') => {
             const results = await Promise.all(uploadPromises);
             logger.info(`Successfully uploaded ${results.length} file(s) to Cloudinary`);
             
-            // Attach upload results to request
             if (req.files) {
                 req.uploadedFiles = results;
             } else {
@@ -191,7 +179,6 @@ export const uploadToCloudinary = (folder = 'theshop') => {
     };
 };
 
-// Error handling middleware for multer errors
 export const handleMulterError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -224,7 +211,6 @@ export const handleMulterError = (err, req, res, next) => {
     next(err);
 };
 
-// Utility function to delete file from Cloudinary
 export const deleteFromCloudinary = async (imageUrl) => {
     try {
         const publicId = extractPublicId(imageUrl);
@@ -237,7 +223,6 @@ export const deleteFromCloudinary = async (imageUrl) => {
     }
 };
 
-// Utility function to get file info from Cloudinary
 export const getFileInfo = async (imageUrl) => {
     try {
         const publicId = extractPublicId(imageUrl);
@@ -249,7 +234,6 @@ export const getFileInfo = async (imageUrl) => {
     }
 };
 
-// Utility function to delete multiple files from Cloudinary
 export const deleteMultipleFromCloudinary = async (imageUrls) => {
     try {
         const publicIds = imageUrls.map(url => extractPublicId(url));
@@ -262,7 +246,6 @@ export const deleteMultipleFromCloudinary = async (imageUrls) => {
     }
 };
 
-// Utility function to extract public ID from Cloudinary URL
 export const getPublicIdFromUrl = (imageUrl) => {
     try {
         return extractPublicId(imageUrl);

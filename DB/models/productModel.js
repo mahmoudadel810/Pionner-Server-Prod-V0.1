@@ -26,12 +26,10 @@ const productSchema = new mongoose.Schema(
 			min: 0,
 			required: true
 		},
-		// Track if product is in stock
 		inStock: {
 			type: Boolean,
 			default: true
 		},
-		// Minimum stock level for low stock alerts
 		minimumStock: {
 			type: Number,
 			default: 5,
@@ -138,32 +136,26 @@ const productSchema = new mongoose.Schema(
 	}
 );
 
-// Pre-save middleware to generate slug and update inStock status
 productSchema.pre('save', function(next) {
-	// Generate slug from name if not provided or if name changed
 	if ((this.isModified('name') || !this.slug) && this.name) {
 		this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 	}
 	
-	// Update inStock status based on stock quantity
 	this.inStock = this.stockQuantity > 0;
 	
 	next();
 });
 
-// Virtual for stock status
 productSchema.virtual('stockStatus').get(function() {
 	if (this.stockQuantity === 0) return 'out_of_stock';
 	if (this.stockQuantity <= this.minimumStock) return 'low_stock';
 	return 'in_stock';
 });
 
-// Virtual for discount percentage (if you implement discount system)
 productSchema.virtual('hasDiscount').get(function() {
 	return this.originalPrice && this.originalPrice > this.price;
 });
 
-// Static method to get low stock products
 productSchema.statics.getLowStockProducts = function() {
 	return this.find({
 		stockQuantity: { $lte: '$minimumStock' },
@@ -171,7 +163,6 @@ productSchema.statics.getLowStockProducts = function() {
 	}).populate('categoryId', 'name');
 };
 
-// Static method to get out of stock products
 productSchema.statics.getOutOfStockProducts = function() {
 	return this.find({
 		stockQuantity: 0,
@@ -179,7 +170,6 @@ productSchema.statics.getOutOfStockProducts = function() {
 	}).populate('categoryId', 'name');
 };
 
-// Static method to get best selling products
 productSchema.statics.getBestSellingProducts = function(limit = 10) {
 	return this.find({ isActive: true })
 		.sort({ totalSold: -1 })
@@ -187,7 +177,6 @@ productSchema.statics.getBestSellingProducts = function(limit = 10) {
 		.populate('categoryId', 'name');
 };
 
-// Static method to get highest revenue products
 productSchema.statics.getHighestRevenueProducts = function(limit = 10) {
 	return this.find({ isActive: true })
 		.sort({ totalRevenue: -1 })
@@ -195,7 +184,6 @@ productSchema.statics.getHighestRevenueProducts = function(limit = 10) {
 		.populate('categoryId', 'name');
 };
 
-// Method to update stock after order
 productSchema.methods.updateStockAfterOrder = async function(quantity) {
 	this.stockQuantity = Math.max(0, this.stockQuantity - quantity);
 	this.totalSold += quantity;
@@ -204,13 +192,11 @@ productSchema.methods.updateStockAfterOrder = async function(quantity) {
 	await this.save();
 };
 
-// Method to update revenue
 productSchema.methods.updateRevenue = async function(amount) {
 	this.totalRevenue += amount;
 	await this.save();
 };
 
-// Indexes for better query performance
 productSchema.index({ categoryId: 1, isActive: 1 });
 productSchema.index({ isFeatured: 1, isActive: 1 });
 productSchema.index({ slug: 1 });

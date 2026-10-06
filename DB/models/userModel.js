@@ -28,10 +28,6 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: [true, "Password is required"],
 			minlength: [6, "Password must be at least 6 characters long"],
-			// match:[
-			// 	/^[\+]?[1-9][\d]{0,15}$/,
-			// 	"hhhhhhhhhhhhhhhhhh"
-			// ]
 		},
 		profileImage: {
 			type: String,
@@ -75,7 +71,6 @@ const userSchema = new mongoose.Schema(
 	}
 );
 
-// Pre-save hook to hash password before saving to database
 userSchema.pre("save", async function (next) {
 	if (!this.isModified("password")) return next();
 

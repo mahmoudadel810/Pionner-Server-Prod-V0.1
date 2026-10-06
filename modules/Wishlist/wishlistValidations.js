@@ -1,6 +1,5 @@
 import Joi from "joi";
 
-// Validation for adding product to wishlist
 export const addToWishlistValidator = Joi.object({
 	productId: Joi.string()
 		.required()
@@ -10,7 +9,6 @@ export const addToWishlistValidator = Joi.object({
 		}),
 });
 
-// Validation for product ID parameter
 export const productIdValidator = Joi.object({
 	productId: Joi.string()
 		.required()

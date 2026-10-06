@@ -26,19 +26,15 @@ const wishlistSchema = new mongoose.Schema(
   }
 );
 
-// Index for efficient queries
 wishlistSchema.index({ user: 1 });
 
-// Virtual for product count
 wishlistSchema.virtual("productCount").get(function () {
   return this.products.length;
 });
 
-// Ensure virtuals are serialized
 wishlistSchema.set("toJSON", { virtuals: true });
 wishlistSchema.set("toObject", { virtuals: true });
 
-// Static method to get or create wishlist for user
 wishlistSchema.statics.getOrCreateWishlist = async function (userId) {
   let wishlist = await this.findOne({ user: userId }).populate({
     path: "products.product",
@@ -52,7 +48,6 @@ wishlistSchema.statics.getOrCreateWishlist = async function (userId) {
   return wishlist;
 };
 
-// Method to add product to wishlist
 wishlistSchema.methods.addProduct = async function (productId) {
   const existingProduct = this.products.find((item) => {
     const itemId = item.product._id ? item.product._id.toString() : item.product.toString();
@@ -68,7 +63,6 @@ wishlistSchema.methods.addProduct = async function (productId) {
   return false; // Product already exists
 };
 
-// Method to remove product from wishlist
 wishlistSchema.methods.removeProduct = async function (productId) {
   const initialLength = this.products.length;
   
@@ -86,7 +80,6 @@ wishlistSchema.methods.removeProduct = async function (productId) {
   return false; // Product not found
 };
 
-// Method to check if product is in wishlist
 wishlistSchema.methods.hasProduct = function (productId) {
   return this.products.some((item) => {
     const itemId = item.product._id ? item.product._id.toString() : item.product.toString();
@@ -94,7 +87,6 @@ wishlistSchema.methods.hasProduct = function (productId) {
   });
 };
 
-// Method to clear wishlist
 wishlistSchema.methods.clearWishlist = async function () {
   this.products = [];
   await this.save();

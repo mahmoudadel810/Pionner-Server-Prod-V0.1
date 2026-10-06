@@ -37,12 +37,10 @@ export const buildSearchQuery = ({
 }) => {
    let query = {};
 
-   // Add user filter if provided
    if (user && user.role !== 'admin') {
       query.user = user._id;
    }
 
-   // Add search functionality
    if (search && search.trim() !== "") {
       const searchRegex = new RegExp(search.trim(), 'i');
       query.$or = searchFields.map(field => ({

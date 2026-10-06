@@ -10,7 +10,6 @@ export const getUserWishlist = async (req, res, next) => {
 
 		const wishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Filter out inactive products
 		const activeProducts = wishlist.products.filter(
 			(item) => item.product && item.product.isActive
 		);
@@ -35,7 +34,6 @@ export const addToWishlist = async (req, res, next) => {
 		const { productId } = req.body;
 		const userId = req.user._id;
 
-		// Validate product exists and is active
 		const product = await productModel.findOne({
 			_id: productId,
 			isActive: true,
@@ -48,10 +46,8 @@ export const addToWishlist = async (req, res, next) => {
 			});
 		}
 
-		// Get or create wishlist
 		const wishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Add product to wishlist
 		const wasAdded = await wishlist.addProduct(productId);
 
 		if (!wasAdded) {
@@ -61,10 +57,8 @@ export const addToWishlist = async (req, res, next) => {
 			});
 		}
 
-		// Fetch the updated wishlist with populated products
 		const updatedWishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Find the newly added product
 		const addedProduct = updatedWishlist.products.find(
 			(item) => item.product && item.product._id.toString() === productId
 		);
@@ -96,10 +90,8 @@ export const removeFromWishlist = async (req, res, next) => {
 		const { productId } = req.params;
 		const userId = req.user._id;
 
-		// Get wishlist
 		const wishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Remove product from wishlist
 		const wasRemoved = await wishlist.removeProduct(productId);
 
 		if (!wasRemoved) {
@@ -124,10 +116,8 @@ export const clearWishlist = async (req, res, next) => {
 	try {
 		const userId = req.user._id;
 
-		// Get wishlist
 		const wishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Clear wishlist
 		await wishlist.clearWishlist();
 
 		res.json({
@@ -146,10 +136,8 @@ export const checkWishlistStatus = async (req, res, next) => {
 		const { productId } = req.params;
 		const userId = req.user._id;
 
-		// Get wishlist
 		const wishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Check if product is in wishlist
 		const isInWishlist = wishlist.hasProduct(productId);
 
 		res.json({
@@ -169,10 +157,8 @@ export const getWishlistCount = async (req, res, next) => {
 	try {
 		const userId = req.user._id;
 
-		// Get wishlist
 		const wishlist = await wishlistModel.getOrCreateWishlist(userId);
 
-		// Count active products
 		const activeCount = wishlist.products.filter(
 			(item) => item.product && item.product.isActive
 		).length;

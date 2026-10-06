@@ -98,10 +98,8 @@ const orderSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Pre-save middleware to calculate category breakdown
 orderSchema.pre('save', function(next) {
 	if (this.isModified('products')) {
-		// Calculate category breakdown
 		const categoryMap = new Map();
 		
 		this.products.forEach(item => {
@@ -127,17 +125,14 @@ orderSchema.pre('save', function(next) {
 	next();
 });
 
-// Virtual for total items count
 orderSchema.virtual('totalItems').get(function() {
 	return this.products.reduce((total, item) => total + item.quantity, 0);
 });
 
-// Virtual for unique categories count
 orderSchema.virtual('uniqueCategories').get(function() {
 	return this.categoryBreakdown.length;
 });
 
-// Index for better query performance
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ 'categoryBreakdown.categoryId': 1 });

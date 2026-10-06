@@ -7,13 +7,11 @@ import { errorHandler } from "../../utils/errorHandler.js";
 
 export const getAnalyticsData = async (req, res, next) => {
 	try {
-		// Basic counts
 		const totalUsers = await userModel.countDocuments();
 		const totalProducts = await productModel.countDocuments();
 		const featuredProducts = await productModel.countDocuments({ isFeatured: true });
 		const recommendedProducts = await productModel.countDocuments({ isRecommended: true });
 
-		// Sales and revenue analytics
 		const salesData = await orderModel.aggregate([
 			{
 				$group: {

@@ -16,7 +16,6 @@ export const validation = (schema) => {
       }
 
       if (validationErrorsArr.length > 0) {
-         // Format error messages to be more user-friendly
          const formattedErrors = validationErrorsArr.map(error => ({
             field: error.path.join('.'),
             message: error.message

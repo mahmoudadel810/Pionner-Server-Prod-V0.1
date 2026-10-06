@@ -4,10 +4,8 @@ export const errorHandler = (err, req, res, next) => {
     let statusCode = err.statusCode || 500;
     let message = err.message || 'Internal Server Error';
     
-    // Get client IP considering proxy
     const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
     
-    // Log error details
     logger.error(`Error ${statusCode}: ${message}`, {
         url: req.originalUrl,
         method: req.method,
@@ -52,7 +50,6 @@ export const errorHandler = (err, req, res, next) => {
         message = 'Token expired';
     }
     
-    // Production error response
     const errorResponse = {
         success: false,
         error: message,

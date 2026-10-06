@@ -3,10 +3,8 @@ import productModel from '../DB/models/productModel.js';
 import logger from './logger.js';
 import sendEmail from '../service/sendEmail.js';
 
-// Function to create order from Stripe session
 export const createOrderFromSession = async (sessionId, userId) => {
     try {
-        // Check if order already exists for this session
         const existingOrder = await orderModel.findOne({ stripeSessionId: sessionId });
         
     if (existingOrder) {
@@ -14,7 +12,6 @@ export const createOrderFromSession = async (sessionId, userId) => {
             return { success: true, order: existingOrder };
         }
 
-        // Create new order
         const newOrder = new orderModel({
             user: userId,
             stripeSessionId: sessionId,
@@ -33,7 +30,6 @@ export const createOrderFromSession = async (sessionId, userId) => {
             // Duplicate key error - order was created by another process
             logger.info('Order was created by another process for session:', sessionId);
             
-            // Try to find the existing order
             try {
                 const existingOrder = await orderModel.findOne({ stripeSessionId: sessionId });
             if (existingOrder) {
@@ -49,7 +45,6 @@ export const createOrderFromSession = async (sessionId, userId) => {
     }
 };
 
-// Function to update order status
 export const updateOrderStatus = async (orderId, status, additionalData = {}) => {
     try {
         const updateData = { status, ...additionalData };
@@ -72,7 +67,6 @@ export const updateOrderStatus = async (orderId, status, additionalData = {}) =>
     }
 };
 
-// Function to handle duplicate key errors for orders
 export const handleDuplicateOrderError = async (error, stripeSessionId) => {
     if (error.code === 11000 && error.keyPattern?.stripeSessionId) {
         logger.info('Duplicate key error, trying to find existing order');
@@ -90,19 +84,16 @@ export const handleDuplicateOrderError = async (error, stripeSessionId) => {
     throw error;
 };
 
-// Function to safely create order with retry logic
 export const createOrderSafely = async (session, options = {}) => {
     const { addressType = 'webhook' } = options;
     
     try {
-        // Check if order already exists
         const existingOrder = await orderModel.findOne({ stripeSessionId: session.id });
         if (existingOrder) {
             logger.info('Order already exists for session:', session.id);
             return { created: false, order: existingOrder };
         }
 
-        // Parse products from session metadata
         let products = [];
         if (session.metadata?.products) {
             try {
@@ -113,7 +104,6 @@ export const createOrderSafely = async (session, options = {}) => {
             }
         }
 
-        // Calculate total amount
         let totalAmount = 0;
         const orderItems = [];
 
@@ -138,7 +128,6 @@ export const createOrderSafely = async (session, options = {}) => {
             });
         }
 
-        // Create order with address information
         const orderData = {
             user: session.metadata.userId,
             stripeSessionId: session.id,
@@ -150,7 +139,6 @@ export const createOrderSafely = async (session, options = {}) => {
             addressType: addressType
         };
 
-        // Add shipping address if available
         if (session.shipping?.address) {
             orderData.shippingAddress = {
                 line1: session.shipping.address.line1 || '',
@@ -162,7 +150,6 @@ export const createOrderSafely = async (session, options = {}) => {
             };
         }
 
-        // Add customer information if available
         if (session.customer_details) {
             orderData.customerInfo = {
                 name: session.customer_details.name || '',
@@ -174,13 +161,12 @@ export const createOrderSafely = async (session, options = {}) => {
         const newOrder = new orderModel(orderData);
         await newOrder.save();
 
-        // Send order confirmation email (SAR currency)
         try {
             const userEmail = orderData.customerInfo?.email;
             if (userEmail) {
                 await sendEmail({
                     to: userEmail,
-                    subject: 'Your Order Confirmation - Pioneer',
+                    subject: 'Your Order Confirmation - Pionner',
                     message: `
                         <h2>Thank you for your order!</h2>
                         <p>Order ID: <b>${newOrder._id}</b></p>
@@ -237,7 +223,6 @@ export const waitForOrder = async (sessionId, timeoutMs = 5000) => {
                 return order;
             }
             
-            // Wait before next check
             await new Promise(resolve => setTimeout(resolve, checkInterval));
         } catch (error) {
             logger.error('Error while waiting for order:', error);
