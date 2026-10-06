@@ -1,47 +1,33 @@
-// Logger configuration: uses file logging locally, but only console logging on Vercel/production (serverless). Vercel's filesystem is read-only except for /tmp, so we avoid writing to project-root logs/ in production.
-import path from 'path';
-import winston from 'winston';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import path from "path";
+import fs from "fs";
+import winston from "winston";
+import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const transports = [new winston.transports.Console()];
 
-const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === 'production';
+// Vercel's filesystem is read-only, so file logs are only written locally
+if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
+  const logDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../logs");
+  fs.mkdirSync(logDir, { recursive: true });
 
-let logDir;
-if (isVercel) {
-  logDir = '/tmp/logs';
-  // Optionally create /tmp/logs if file logging is ever enabled
-  // if (!fs.existsSync(logDir)) {
-  //   fs.mkdirSync(logDir, { recursive: true });
-  // }
-} else {
-  logDir = path.join(__dirname, '../logs');
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir, { recursive: true });
-  }
-}
-
-const transports = [
-  new winston.transports.Console(),
-];
-
-if (!isVercel) {
   transports.push(
-    new winston.transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error',
-    }),
-    new winston.transports.File({
-      filename: path.join(logDir, 'combined.log'),
-    })
+    new winston.transports.File({ filename: path.join(logDir, "error.log"), level: "error" }),
+    new winston.transports.File({ filename: path.join(logDir, "combined.log") })
   );
 }
 
+// Lets calls like logger.error("Upload failed:", err.message) keep the second argument
+const appendArgs = winston.format((info) => {
+  const extra = (info[Symbol.for("splat")] || []).filter((arg) => arg === null || typeof arg !== "object");
+  if (extra.length) {
+    info.message = [info.message, ...extra.map(String)].join(" ");
+  }
+  return info;
+});
+
 const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
+  level: "info",
+  format: winston.format.combine(appendArgs(), winston.format.json()),
   transports,
 });
 

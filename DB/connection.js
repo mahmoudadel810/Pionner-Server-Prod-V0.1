@@ -1,39 +1,37 @@
 import mongoose from "mongoose";
 import logger from "../utils/logger.js";
 
-const connectDB = async () => {
-    try {
-        const mongoUri = process.env.MONGO_URI || process.env.MONGO_URI;
-        
-        if (!mongoUri) {
-            throw new Error('MongoDB connection string not found. Please set MONGO_URI environment variable.');
-        }
-        
-        const conn = await mongoose.connect(mongoUri, {
+let connection = null;
+
+mongoose.connection.on("error", (err) => logger.error(`MongoDB error: ${err.message}`));
+mongoose.connection.on("disconnected", () => logger.warn("MongoDB disconnected"));
+
+// Returns a cached connection promise so serverless invocations reuse the
+// same connection. A failed attempt is cleared so the next request retries.
+const connectDB = () => {
+    if (connection) return connection;
+
+    const uri = process.env.MONGO_URI;
+    if (!uri) {
+        return Promise.reject(new Error("MONGO_URI is not set"));
+    }
+
+    connection = mongoose
+        .connect(uri, {
             maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
+        })
+        .then((conn) => {
+            logger.info(`MongoDB connected: ${conn.connection.host}`);
+            return conn;
+        })
+        .catch((error) => {
+            connection = null;
+            throw error;
         });
-        
-        logger.info(`MongoDB Connected: ${conn.connection.host}`);
-        
-        // Handle connection events
-        mongoose.connection.on('error', (err) => {
-            logger.error('MongoDB connection error:', err);
-        });
-        
-        mongoose.connection.on('disconnected', () => {
-            logger.warn('MongoDB disconnected');
-        });
-        
-        mongoose.connection.on('reconnected', () => {
-            logger.info('MongoDB reconnected');
-        });
-        
-    } catch (error) {
-        logger.error('Error connecting to MongoDB:', error.message);
-        process.exit(1);
-    }
+
+    return connection;
 };
 
-export default connectDB; 
+export default connectDB;

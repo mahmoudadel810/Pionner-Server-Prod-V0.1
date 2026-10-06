@@ -2,10 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import dotenv from "dotenv";
-import path from "path";
 import cookieParser from "cookie-parser";
-import { createServer } from "http";
 import { errorHandler, notFound } from "../utils/errorHandler.js";
 import connectDB from "../DB/connection.js";
 import { initCloudinary } from "../service/cloudinary.js";
@@ -14,279 +11,187 @@ import logger from "../utils/logger.js";
 import { apiLimiter, authLimiter, paymentLimiter } from "../middlewares/rateLimit.js";
 import { getHealthStatus } from "../utils/healthMonitor.js";
 
-export const initApp = () =>
+const DEV_ORIGINS = [
+   "http://localhost:5173",
+   "http://localhost:5174",
+   "http://localhost:3000",
+   "http://localhost:3001",
+   "http://localhost:4173",
+   "http://localhost:4174"
+];
+
+const PRODUCTION_ORIGINS = [
+   "https://pionner-v21.vercel.app",
+   "https://pionner-v2.vercel.app",
+   "https://pionner.vercel.app"
+];
+
+export const createApp = () =>
 {
-   // Load environment variables
-   dotenv.config({
-      path: path.resolve('./config/.env'),
-      debug: false,
-      safe: true
-   });
-
    const app = express();
-   const PORT = process.env.PORT || 8000;
-   const isProduction = process.env.NODE_ENV === 'production';
+   const isProduction = process.env.NODE_ENV === "production";
 
-   // Initialize critical services
-   initializeServices();
+   initCloudinary();
 
-   // Configure Express app
    configureSecurityMiddleware(app, isProduction);
    configureCORS(app, isProduction);
    configureBodyParsing(app);
    configureRateLimiting(app);
+   configureDatabase(app);
    configureRoutes(app);
-   configureErrorHandling(app);
 
-   // Start server
-   const server = startServer(app, PORT);
+   app.use(notFound);
+   app.use(errorHandler);
 
-   return { app, server };
+   return app;
 };
 
-// Service initialization
-const initializeServices = () =>
-{
-   try
-   {
-      initCloudinary();
-      logger.info('Cloudinary initialized successfully');
-   } catch (error)
-   {
-      logger.warn('Cloudinary initialization failed:', error.message);
-   }
-
-   try
-   {
-      connectDB();
-      logger.info('Database connected successfully');
-   } catch (error)
-   {
-      logger.error('Database connection failed:', error.message);
-      throw error;
-   }
-};
-
-// Security middleware configuration
 const configureSecurityMiddleware = (app, isProduction) =>
 {
-   // Trust proxy for production (needed for rate limiting behind load balancers)
+   // Needed for correct client IPs (rate limiting) behind Vercel's proxy
    if (isProduction)
    {
-      app.set('trust proxy', 1);
+      app.set("trust proxy", 1);
    }
 
-   // Helmet security headers
    app.use(helmet({
       contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
       crossOriginResourcePolicy: { policy: "cross-origin" }
    }));
 
-   // Additional security headers for production
-   if (isProduction)
-   {
-      app.use((req, res, next) =>
-      {
-         res.setHeader('X-Content-Type-Options', 'nosniff');
-         res.setHeader('X-Frame-Options', 'DENY');
-         res.setHeader('X-XSS-Protection', '1; mode=block');
-         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-         next();
-      });
-   }
-
-   // Compression middleware
-   app.use(compression({ level: 6 }));
+   app.use(compression());
 };
 
-// CORS configuration
 const configureCORS = (app, isProduction) =>
 {
-   const allowedOrigins = isProduction
-      ? [
-         process.env.CLIENT_URL,
-         'https://pionner-v2.vercel.app',
-         'https://pionner-v21.vercel.app',
-         'https://pionner.vercel.app',
-         'https://5174-ihkfje5ha9ofr4jrb6vtx-7f1f3943.manusvm.computer',
-         'http://localhost:5173',
-         'http://localhost:5174',
-         'http://localhost:3000',   
-         'http://localhost:3001',
-         'http://localhost:4173',
-         'http://localhost:4174'
-      ]
-      : [
-         "http://localhost:5173",
-         "http://localhost:5174",
-         "http://localhost:3000",
-         "http://localhost:3001",
-         "http://localhost:4173",
-         "http://localhost:4174",
-         "https://5174-ihkfje5ha9ofr4jrb6vtx-7f1f3943.manusvm.computer"
-      ];
+   const extraOrigins = (process.env.CORS_ORIGINS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+
+   const allowedOrigins = new Set([
+      process.env.CLIENT_URL,
+      process.env.SERVER_URL,
+      ...extraOrigins,
+      ...(isProduction ? PRODUCTION_ORIGINS : DEV_ORIGINS)
+   ].filter(Boolean).map((origin) => origin.replace(/\/$/, "")));
 
    const corsOptions = {
       origin: (origin, callback) =>
       {
-         // Allow requests with no origin (mobile apps, curl, postman, etc.)
-         if (!origin) return callback(null, true);
-
-         // Allow same-origin requests (when frontend and backend are on same domain)
-         if (origin === process.env.CLIENT_URL || origin === process.env.SERVER_URL) {
+         // Requests without an Origin header (curl, server-to-server) are allowed
+         if (!origin || allowedOrigins.has(origin))
+         {
             return callback(null, true);
          }
 
-         if (allowedOrigins.includes(origin))
-         {
-            callback(null, true);
-         } else
-         {
-            logger.warn(`CORS blocked origin: ${origin}`);
-            // Return a 403 Forbidden error for CORS, not a generic 500
-            const corsError = new Error('Not allowed by CORS');
-            corsError.statusCode = 403;
-            callback(corsError);
-         }
+         logger.warn(`CORS blocked origin: ${origin}`);
+         const corsError = new Error("Not allowed by CORS");
+         corsError.statusCode = 403;
+         callback(corsError);
       },
       credentials: true,
       optionsSuccessStatus: 200,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: [
-         'Content-Type',
-         'Authorization',
-         'X-Requested-With',
-         'Accept',
-         'Origin'
-      ],
-      exposedHeaders: [
-         'Content-Range',
-         'X-Content-Range',
-         'X-Access-Token',
-         'X-Refresh-Token'
-      ]
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+      exposedHeaders: ["Content-Range", "X-Content-Range", "X-Access-Token", "X-Refresh-Token"]
    };
 
    app.use(cors(corsOptions));
-   app.options('*', cors(corsOptions));
+   app.options("*", cors(corsOptions));
 };
 
-// Body parsing middleware
 const configureBodyParsing = (app) =>
 {
-   app.use(express.json({ limit: "10mb" }));
+   const jsonParser = express.json({ limit: "10mb" });
+
+   // The Stripe webhook needs the raw body for signature verification
+   app.use((req, res, next) =>
+      req.originalUrl.startsWith("/api/v2/payments/webhook") ? next() : jsonParser(req, res, next)
+   );
    app.use(express.urlencoded({ extended: true, limit: "10mb" }));
    app.use(cookieParser());
 
-   // Request logging middleware
    app.use((req, res, next) =>
    {
-      const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+      const clientIP = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip;
       logger.http(`${req.method} ${req.originalUrl} - ${clientIP}`);
       next();
    });
 };
 
-// Rate limiting configuration
 const configureRateLimiting = (app) =>
 {
-   app.use('/api/v2/', apiLimiter);
-   app.use('/api/v2/auth/', authLimiter);
-   app.use('/api/v2/payments/', paymentLimiter);
+   app.use("/api/v2/", apiLimiter);
+   app.use("/api/v2/auth/", authLimiter);
+   app.use("/api/v2/payments/", paymentLimiter);
 };
 
-// Routes configuration
-const configureRoutes = (app) =>
+// Every API request waits for the (cached) MongoDB connection, so a cold
+// serverless start never runs a query before the connection is ready.
+const configureDatabase = (app) =>
 {
-   // API Routes with consistent trailing slash handling
-   app.use('/api/v2/auth/', AllRoutes.authRoutes);
-   app.use('/api/v2/categories/', AllRoutes.categoryRoutes);
-   app.use('/api/v2/products/', AllRoutes.productRoutes);
-   app.use('/api/v2/cart/', AllRoutes.cartRoutes);
-   app.use('/api/v2/coupons/', AllRoutes.couponRoutes);
-   app.use('/api/v2/payments/', AllRoutes.paymentRoutes);
-   app.use('/api/v2/analytics/', AllRoutes.analyticsRoutes);
-   app.use('/api/v2/orders/', AllRoutes.orderRoutes);
-   app.use('/api/v2/contact/', AllRoutes.contactUsRoutes);
-   app.use('/api/v2/wishlist/', AllRoutes.wishlistRoutes);
-
-   // Root endpoint
-   app.get('/', (req, res) =>
+   app.use("/api", async (req, res, next) =>
    {
-      res.status(200).json({
-         success: true,
-         message: 'TheShop API is running!',
-         version: process.env.npm_package_version || '2.0.0',
-         environment: process.env.NODE_ENV || 'development',
-         timestamp: new Date().toISOString(),
-         endpoints: {
-            health: '/health',
-            auth: '/api/v2/auth/',
-            products: '/api/v2/products/',
-            categories: '/api/v2/categories/',
-            orders: '/api/v2/orders/',
-            payments: '/api/v2/payments/',
-            cart: '/api/v2/cart/',
-            wishlist: '/api/v2/wishlist/',
-            analytics: '/api/v2/analytics/',
-            contact: '/api/v2/contact/',
-            coupons: '/api/v2/coupons/'
-         }
-      });
-   }); //latest
-
-   // Health check endpoint
-   app.get('/health', async (req, res) =>
-   {
-      try 
+      try
       {
-         const healthData = await getHealthStatus(req);
-         const statusCode = healthData.success ? 200 : 503;
-         res.status(statusCode).json(healthData);
+         await connectDB();
+         next();
       } catch (error)
       {
-         logger.error('Health check failed:', error.message);
-         res.status(500).json({
-            success: false,
-            message: 'Health check failed',
-            timestamp: new Date().toISOString(),
-            error: error.message
-         });
+         logger.error(`Database connection failed: ${error.message}`);
+         res.status(503).json({ success: false, message: "Database unavailable" });
       }
    });
 };
 
-// Error handling configuration
-const configureErrorHandling = (app) =>
+const configureRoutes = (app) =>
 {
-   app.use(notFound);
-   app.use(errorHandler);
-};
+   app.use("/api/v2/auth/", AllRoutes.authRoutes);
+   app.use("/api/v2/categories/", AllRoutes.categoryRoutes);
+   app.use("/api/v2/products/", AllRoutes.productRoutes);
+   app.use("/api/v2/cart/", AllRoutes.cartRoutes);
+   app.use("/api/v2/coupons/", AllRoutes.couponRoutes);
+   app.use("/api/v2/payments/", AllRoutes.paymentRoutes);
+   app.use("/api/v2/analytics/", AllRoutes.analyticsRoutes);
+   app.use("/api/v2/orders/", AllRoutes.orderRoutes);
+   app.use("/api/v2/contact/", AllRoutes.contactUsRoutes);
+   app.use("/api/v2/wishlist/", AllRoutes.wishlistRoutes);
 
-// Server startup
-const startServer = (app, PORT) =>
-{
-   const server = createServer(app);
-
-   server.listen(PORT, () =>
+   app.get("/", (req, res) =>
    {
-      logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+      res.status(200).json({
+         success: true,
+         message: "Pionner API is running",
+         environment: process.env.NODE_ENV || "development",
+         endpoints: {
+            health: "/health",
+            auth: "/api/v2/auth/",
+            products: "/api/v2/products/",
+            categories: "/api/v2/categories/",
+            orders: "/api/v2/orders/",
+            payments: "/api/v2/payments/",
+            cart: "/api/v2/cart/",
+            wishlist: "/api/v2/wishlist/",
+            analytics: "/api/v2/analytics/",
+            contact: "/api/v2/contact/",
+            coupons: "/api/v2/coupons/"
+         }
+      });
    });
 
-   // Graceful shutdown
-   const gracefulShutdown = () =>
+   app.get("/health", async (req, res) =>
    {
-      logger.info('Received shutdown signal, closing server gracefully...');
-      server.close(() =>
+      try
       {
-         logger.info('Server closed. Process terminated.');
-         process.exit(0);
-      });
-   };
-
-   process.on('SIGTERM', gracefulShutdown);
-   process.on('SIGINT', gracefulShutdown);
-
-   return server;
+         await connectDB().catch(() => null);
+         const healthData = await getHealthStatus();
+         res.status(healthData.success ? 200 : 503).json(healthData);
+      } catch (error)
+      {
+         logger.error(`Health check failed: ${error.message}`);
+         res.status(500).json({ success: false, message: "Health check failed" });
+      }
+   });
 };
